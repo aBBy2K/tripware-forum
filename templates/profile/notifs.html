@@ -6,7 +6,7 @@
             <div class="profile-container">
                 <h1>{{ n.head }}</h1>
                 <p>{{ n.body }}</p>
-                <p>{{ n.created_at | last_seen }} | <a href="#">Mark as read</a></p>
+                <p>{{ n.created_at | last_seen }} | <a href="/profile/notifications/{{ n.id }}/read">Mark as read</a></p>
             </div>
         {% endfor %}
     {% else %}

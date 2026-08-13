@@ -282,7 +282,7 @@ class ForumService:
                 detail="post not found"
             )
 
-        if not post.allow_comms or post.subcategory.required_role != current_user.role.name:
+        if not post.allow_comms or current_user.role.name != "Admin" and post.subcategory.required_role != current_user.role.name:
             raise HTTPException(
                 status_code=403,
                 detail="no permission"
