@@ -1,0 +1,17 @@
+{% extends "bases/base_authed.html" %}
+{% block content %}
+
+    {% if notifs %}
+        {% for n in notifs %}
+            <div class="profile-container">
+                <h1>{{ n.head }}</h1>
+                <p>{{ n.body }}</p>
+                <p>{{ n.created_at | last_seen }} | <a href="#">Mark as read</a></p>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="profile-container">
+            <p>You have 0 notifications</p>
+        </div>
+    {% endif %}
+{% endblock %}

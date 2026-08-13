@@ -1,0 +1,15 @@
+{% extends "bases/base_unauthed.html" %}
+{% block content %}
+
+<div class="unauthed-container">
+    <form class="auth-form" method="post">
+        <label for="email">Email</label>
+        <input type="email" name="email" id="email" placeholder="tripware@example.com">
+        <input type="submit" value="Send mail">
+    </form>
+    {% if e %}
+        <p>{{ e }}</p>
+    {% endif %}
+</div>
+
+{% endblock %}

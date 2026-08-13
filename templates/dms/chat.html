@@ -1,0 +1,73 @@
+{% extends "bases/base_authed.html" %}
+{% block content %}
+
+<div class="dm-container">
+    <div class="recipient">
+        {% if e %}
+            <p>{{ e }}</p>
+        {% else %}
+            <img src="{{ recipient.pfp }}" width="50" height="50">
+        <a href="/users/{{ recipient.id }}">{{ recipient.name }}</a>
+        {% endif %}
+    </div>
+    <div class="messages" id="messages">
+        {% for msg in messages %}
+            {% if msg.sender_id == current_user.id %}
+                <div class="my-msgs">
+                    You: {{ msg.msg }}
+                </div>
+            {% else %}
+                <div class="frg-msgs">
+                    {{ msg.sender.name }}: {{ msg.msg }}
+                </div>
+            {% endif %}
+        {% endfor %}
+        </div>
+
+    <div class="msg-chat-container">
+        <textarea placeholder="Your message" id="input-msg"></textarea>
+        <button id="send-btn" style="background: #1b1b1b; border: 1px solid #323232">Send</button>
+    </div>
+</div>
+
+<!-- JS PARTIALLY AI GENERATED -->
+<script>
+const socket = new WebSocket(`ws://${window.location.host}/dms/ws`);
+
+const sendBtn = document.getElementById("send-btn");
+const msgInput = document.getElementById("input-msg");
+const myMsgsDiv = document.getElementById("my-msgs");
+const frgMsgsDiv = document.getElementById("frg-msgs");
+
+const currentUserName = "{{ current_user.name }}";
+const recipientId = {{ recipient.id }};
+const recipientName = "{{ recipient.name }}";
+const messagesContainer = document.getElementById("messages");
+
+function appendMessage(className, name, text) {
+    const div = document.createElement("div");
+    div.className = className;
+    div.textContent = `${name}: ${text}`;
+    messagesContainer.appendChild(div);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+sendBtn.addEventListener("click", () => {
+    const text = msgInput.value.trim();
+    if (!text) return;
+
+    socket.send(JSON.stringify({ recipient_id: recipientId, msg: text }));
+    appendMessage("my-msgs", currentUserName, text);
+    msgInput.value = "";
+});
+
+socket.onmessage = function(event) {
+    const data = JSON.parse(event.data);
+
+    if (data.type === "dm_msg") {
+        appendMessage("frg-msgs", recipientName, data.msg);
+    }
+};
+</script>
+
+{% endblock %}

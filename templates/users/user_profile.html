@@ -1,0 +1,82 @@
+{% extends "bases/base_authed.html" %}
+{% block content %}
+
+<div class="profile-container">
+    <div class="main-info">
+        <div class="img-con">
+            <img src="{{ user.pfp }}" width="150" height="150">
+            {{ user.role.name }}
+                {% if is_o %}
+                    <p id="user-status">
+                        Online
+                    </p>
+                {% else %}
+                    <p id="user-status">
+                        Offline<br>
+                        <span id="last-seen">
+                            Last seen: {{ user.last_seen | last_seen}}
+                        </span>
+                    </p>
+                {% endif %}
+        </div>
+        {% if user.is_banned %}
+            <strike>{{ user.name }}</strike>
+        {% else %}
+                {{ user.name }}
+        {% endif %}
+    </div>
+    {% if user.is_banned %}
+        <p>Banned account. Reason: {{ user.ban_reason }}</p>
+    {% else %}
+        <div class="account-nav">
+            {% if is_f %}
+                <a href="/users/{{ user.id }}/sub">Unsubscribe</a>
+            {% else %}
+                <a href="/users/{{ user.id }}/sub">Subscribe</a>
+            {% endif %}
+            <a href="/dms/{{ user.id }}">Send DM</a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+const token = document.cookie
+    .split("; ")
+    .find(row => row.startsWith("token="))
+    ?.split("=")[1];
+
+const ws = new WebSocket(
+    `ws://${window.location.host}/users/{{ user.id }}/ws?token=${token}`
+);
+
+ws.onmessage = (event) => {
+    console.log(event.data);
+
+    const data = JSON.parse(event.data);
+
+    if (data.type !== "user_status")
+        return;
+
+    if (data.user_id != {{ user.id }})
+        return;
+
+    const status = document.getElementById("user-status");
+
+    if (data.status === "online") {
+        status.innerHTML = "Online";
+    } else {
+        status.innerHTML = `
+            Offline<br>
+            <span id="last-seen">
+                Last seen: just now
+            </span>
+        `;
+    }
+};
+
+ws.onclose = () => {
+    console.log("User status websocket closed");
+};
+</script>
+
+{% endblock %}

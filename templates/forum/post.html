@@ -1,0 +1,129 @@
+{% extends "bases/base_authed.html" %}
+{% block content %}
+<div class="posts-container">
+    <div class="post-container">
+        <div class="post-full">
+            <div class="post-full-author">
+                <img src="{{ post.author.pfp }}" width="80" height="80">
+                <a href="/users/{{ post.author.id }}" style="font-size: 15px">{{ post.author.name }}</a>
+            </div>
+            <div class="post-content">
+                <div class="post-title">
+                    <a href="/users/{{ post.author_id }}">{{ post.title }}</a>
+                </div>
+
+                {{ post.body }}
+
+                {% if post.images %}
+                    <div class="post-images">
+                        {% for img in post.images %}
+                            <img src="{{ img.path }}" style="max-width: 450px; border-radius: 5px; margin-top: 5px">
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="post-interaction">
+            {% if is_liked %}
+                <a id="like-btn" href="/forum/post/{{ post.id }}/like">
+                    Unlike (<span id="likes-count">{{ likes }}</span>)
+                </a>
+            {% else %}
+                <a id="like-btn" href="/forum/post/{{ post.id }}/like">
+                    Like (<span id="likes-count">{{ likes }}</span>)
+                </a>
+            {% endif %}
+
+            <a href="/forum/post/{{ post.id }}/report">Report</a>
+
+            {% if current_user.role.name == "Admin" or post.author.id == current_user.id %}
+                <a href="/forum/post/{{ post.id }}/delete">Delete</a>
+            <a href="/forum/post/{{ post.id }}/edit">Edit</a>
+            {% endif %}
+
+            <p>{{ post.views }} Views</p>
+        </div>
+    </div>
+</div>
+
+{% if comments %}
+    {% for c in comments %}
+        <div class="posts-container" id="{{ c.id }}">
+            <div class="post-container">
+                <div class="post-full">
+                    <div class="post-full-author">
+                        <img src="{{ c.author.pfp }}" width="80" height="80">
+                        <a href="/users/{{ c.author.id }}" style="font-size: 15px">{{ c.author.name }}</a>
+                    </div>
+
+                    <div class="post-content">
+                        {{ c.body }}
+                    </div>
+                </div>
+
+                <div class="post-interaction">
+                    {% if c.id in liked %}
+                        <a href="/forum/comment/{{ c.id }}/like" style="text-decoration: underline">Unlike</a>
+                    {% else %}
+                        <a href="/forum/comment/{{ c.id }}/like">Like</a>
+                    {% endif %}
+
+                    <a href="/forum/comment/{{ c.id }}/report">Report</a>
+
+                    {% if current_user.role.name == "Admin" or c.author.id == current_user.id %}
+                        <a href="/forum/comment/{{ c.id }}/delete">Delete</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <p style="text-align: center">There's no comments yet :(</p>
+{% endif %}
+
+
+{% if allow_comments %}
+    <div class="posts-container">
+        <form class="msg-chatbox-container" method="post">
+            <textarea id="comment" name="comment" placeholder="Leave your message here..."></textarea>
+            <button id="send-btn" type="submit" style="background: #1b1b1b; border: 1px solid #323232">
+                Send
+            </button>
+        </form>
+    </div>
+{% endif %}
+
+<script>
+const token = document.cookie
+    .split("; ")
+    .find(row => row.startsWith("token="))
+    ?.split("=")[1];
+
+const ws = new WebSocket(
+    `ws://${window.location.host}/forum/post/ws/{{ post.id }}?token=${token}`
+);
+
+ws.onopen = () => {
+    console.log("Connected to post websocket");
+};
+
+ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+
+    switch (data.type) {
+
+        case "like":
+        case "unlike":
+
+            document.getElementById("likes-count").textContent = data.value;
+            break;
+    }
+};
+
+ws.onclose = () => {
+    console.log("Disconnected");
+};
+</script>
+
+{% endblock %}

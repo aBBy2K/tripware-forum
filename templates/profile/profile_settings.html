@@ -1,0 +1,17 @@
+{% extends "bases/base_authed.html" %}
+{% block content %}
+
+<div class="unauthed-container">
+    <form class="auth-form" method="post" enctype="multipart/form-data">
+        <label for="name">Displayable name</label>
+        <input type="text" id="name" name="name" placeholder="...">
+        <label for="pfp">Profile picture</label>
+        <input type="file" id="pfp" name="pfp" placeholder="************">
+        <input type="submit" value="Edit">
+        {% if e %}
+            <p>{{ e }}</p>
+        {% endif %}
+    </form>
+</div>
+
+{% endblock %}

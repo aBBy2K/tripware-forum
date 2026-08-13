@@ -1,0 +1,15 @@
+{% extends "bases/base_authed.html" %}
+{% block content %}
+
+<div class="profile-container">
+    {% if subs %}
+        {% for s in subs %}
+            <img src="{{ s.pfp }}" height="50" width="50">
+            <a href="/users/{{ s.id }}">{{ s.name }}</a>
+        {% endfor %}
+    {% else %}
+        <p>You have no subscriptions yet:(</p>
+    {% endif %}
+</div>
+
+{% endblock %}

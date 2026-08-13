@@ -1,0 +1,17 @@
+{% extends "bases/base_unauthed.html" %}
+{% block content %}
+
+<div class="unauthed-container">
+    <form class="auth-form" method="post">
+        <label for="password">New password</label>
+        <input type="password" id="password" name="password" placeholder="************">
+        <label for="c_password">Confirm password</label>
+        <input type="password" id="c_password" name="c_password" placeholder="************">
+        <input type="submit" value="Recover">
+    </form>
+    {% if e %}
+        <p>{{ e }}</p>
+    {% endif %}
+</div>
+
+{% endblock %}

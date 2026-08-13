@@ -1,0 +1,27 @@
+{% extends "bases/base_authed.html" %}
+{% block content %}
+<div class="posts-container">
+    {% if q %}
+        <p>Результаты по запросу: <b>{{ q }}</b></p>
+        {% if posts %}
+            {% for post in posts %}
+            <div class="post">
+                <div class="post-author">
+                    <img src="{{ post.author.pfp }}" width="50" height="50">
+                </div>
+                <div class="post-content">
+                    <div class="post-title">
+                        <a href="/forum/post/{{ post.id }}">{{ post.title }}</a>
+                    </div>
+                    <div class="post-body">{{ post.body[:100] }}...</div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>Ничего не найдено :(</p>
+        {% endif %}
+    {% else %}
+        <p>Введи запрос для поиска</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "bases/base_authed.html" %}
+{% block content %}
+
+<div class="profile-container">
+    {% if chats %}
+        {% for chat in chats %}
+            <div style="display: flex; flex-direction: row; width: fit-content; margin: 0 auto; text-align: center; justify-content: center; align-items: center">
+                <a href="/dms/{{ chat.id }}"><img src="{{ chat.pfp }}" height="50" width="50">{{ chat.name }}</a>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>There's nothing...</p>
+    {% endif %}
+</div>
+
+{% endblock %}

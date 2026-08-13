@@ -1,0 +1,370 @@
+* {
+    color: white;
+    font-family: helvetica;
+    font-size: small;
+}
+
+a {
+    text-decoration: none;
+    color: white;
+}
+
+body {
+    background: #1b1b1b;
+}
+
+header {
+    display: flex;
+    flex-direction: column;
+
+    justify-content: center;
+    align-items: center;
+    border: 0;
+    border-radius: 5px;
+    margin: 0 auto;
+    width: 810px;
+    padding: 10px;
+
+    outline: 1px solid #323232;
+    background: #1c1c1c;
+}
+
+.software-header-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: "Trebuchet MS";
+    color: white;
+    margin-bottom: 5px;
+}
+
+nav {
+    display: flex;
+    flex-direction: row;
+    padding: 10px;
+    border: 0;
+    border-radius: 5px;
+    gap: 10px;
+    width: 800px;
+
+    outline: 1px solid #323232;
+    background: #232323;
+}
+
+.unauthed-container {
+    display: flex;
+    flex-direction: column;
+
+    margin: 20px auto;
+    outline: 1px solid #323232;
+    width: 800px;
+    padding: 10px;
+
+    border: 0;
+    border-radius: 5px;
+    background: #1c1c1c;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+
+    gap: 5px;
+    width: 300px;
+    padding: 5px;
+}
+
+.auth-form input[type="submit"] {
+    display: flex;
+    width: 200px;
+
+    border: 1px solid #323232;
+    background: #232323;
+}
+
+.auth-form input[type="text"], input[type="password"], input[type="email"], select, input[type="number"], textarea {
+    display: flex;
+    width: 200px;
+    resize: none;
+
+    border: 1px solid #323232;
+    background: #232323;
+}
+
+.profile-container {
+    display: flex;
+    flex-direction: column;
+
+    margin: 20px auto;
+    padding: 10px;
+    width: 800px;
+
+    border-radius: 5px;
+    border: 1px solid #323232;
+    background: #232323;
+}
+
+
+.profile-container a {
+    margin-top: 10px;
+    width: fit-content;
+    padding: 5px;
+    border: 1px solid #323232;
+    background: #232323;
+}
+
+.categories-container {
+    display: flex;
+    flex-direction: column;
+
+    margin: 20px auto;
+    padding: 10px;
+    width: 800px;
+
+    border-radius: 5px;
+    border: 1px solid #323232;
+    background: #232323;
+}
+
+.categories-container a {
+    margin-top: 10px;
+    width: 700px;
+    border-radius: 5px;
+    padding: 5px;
+    background: #323232;
+
+    font-size: 20px;
+}
+
+.subcategories-container {
+    width: 770px;
+    margin-left: 30px;
+}
+
+.subcategories-container a {
+    display: flex;
+    flex-direction: row;
+    font-size: 15px;
+}
+
+.main-info {
+    display: flex;
+
+    gap: 10px;
+    font-size: 20px;
+}
+
+.account-nav {
+    display: flex;
+    flex-direction: row;
+
+    gap: 5px;
+    margin-top: 5px;
+}
+
+.dm-container {
+    display: flex;
+    flex-direction: column;
+
+    width: 800px;
+    gap: 30px;
+    padding: 5px;
+    margin: 20px auto;
+    justify-content: center;
+    align-items: center;
+
+    border: 1px solid #323232;
+    border-radius: 5px;
+    background: #232323;
+    height: fit-content;
+}
+
+.messages {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.recipient {
+    display: flex;
+    flex-direction: row;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+}
+
+.msg-chat-container {
+    display: flex;
+    flex-direction: row;
+    margin-top: 15px;
+}
+
+.msg-chat-container textarea {
+    background: #1b1b1b;
+    width: 270px;
+    height: 50px;
+    resize: none;
+    border: 1px solid #323232;
+}
+
+.chatbox-msgs {
+    display: flex;
+    flex-direction: column;
+
+    border: 1px solid #323232;
+    height: 150px;
+}
+
+.msg-chatbox-container {
+    display: flex;
+}
+
+.msg-chatbox-container textarea, input[type="text"] {
+    display: flex;
+    width: 800px;
+    background: #1b1b1b;
+    resize: none;
+    border: 1px solid #323232;
+}
+
+.msg-chatbox-container input[type="submit"] {
+    background: #1b1b1b;
+    border: 1px solid #323232;
+}
+
+.img-con {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    gap: 5px;
+}
+
+.posts-container {
+    display: flex;
+    flex-direction: column;
+    margin: 30px auto;
+    width: 800px;
+    padding: 10px;
+
+    border: 1px solid #323232;
+    border-radius: 5px;
+    background: #232323;
+    height: fit-content;
+}
+
+.post {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.post-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.post-body {
+    font-size: 11px;
+    color: #aaaaaa;
+}
+
+
+.posts-container a {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    width: fit-content;
+    font-size: 20px;
+}
+
+.post-full {
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
+    align-items: flex-start;
+}
+
+.post-full-author {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    justify-content: center;
+    align-items: center;
+}
+
+.post-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.post-interaction {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.post-interaction a {
+    font-size: 15px;
+}
+
+.profile-links {
+    display: flex;
+    flex-direction: row;
+}
+
+.notif-bell {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+#notif-count {
+    background: #323232;
+    color: white;
+    border-radius: 50%;
+    font-size: 10px;
+    min-width: 10px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 3px;
+}
+.lil-nav {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    margin: 0 auto;
+}
+
+.lil-nav a {
+    font-size: small;
+}
+
+.fullpath {
+    display: flex;
+    width: 100px;
+    flex-direction: row;
+    gap: 5px;
+}
+
+.fullpath a, p{
+    font-size: 12px;
+}
+
+.forum-interaction {
+    float: right;
+}
+
+.link-btn {
+    margin-top: 10px;
+    width: fit-content;
+    padding: 5px;
+    border: 1px solid #323232;
+    background: #232323;
+}

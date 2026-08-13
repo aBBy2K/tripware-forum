@@ -1,0 +1,26 @@
+{% extends "bases/base_authed.html" %}
+{% block content %}
+
+{% if a_sub %}
+    <div class="profile-container">
+        <p>You already have an active subscription</p>
+        Your subscription will expire at: {{ a_sub.expires_at }}
+    </div>
+{% else %}
+<div class="profile-container">
+    <p>Buy subscription</p>
+    <form class="auth-form" method="post">
+        <label for="plan">Select your plan</label>
+        <select name="plan" id="plan">
+            <option value="1">CS2 30 days / 20$</option>
+            <option value="2">CS2 60 days / 40$</option>
+            <option value="3">CS2 90 days / 60$</option>
+        </select>
+        <input type="submit" value="Buy">
+    </form>
+    {% if e %}
+        <p>{{ e }}</p>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

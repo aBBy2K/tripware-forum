@@ -1,0 +1,92 @@
+{% extends "bases/base_authed.html" %}
+{% block content %}
+
+{% if e %}
+    <div class="profile-container">
+        {{ e }}
+    </div>
+{% else %}
+
+<div class="profile-container">
+    <p>Welcome back, <b>{{ user.name }}</b></p>
+</div>
+
+<div class="profile-container">
+    <p>Chatbox</p>
+    <div class="chatbox-msgs" id="chatbox-msgs">
+        {% for msg in msgs %}
+            <div class="cb-msg"><b>{{ msg.sender.name }}:</b> {{ msg.msg }}</div>
+        {% endfor %}
+    </div>
+    <div class="msg-chatbox-container">
+        <textarea placeholder="Your message" id="input-msg"></textarea>
+        <button id="send-btn" style="background: #1b1b1b; border: 1px solid #323232">Send</button>
+    </div>
+</div>
+
+<p style="text-align: center">Forum</p>
+
+    {% if user.role.name == "Admin" %}
+        <div class="profile-container">
+            <a href="/admin/c_create">Create category</a>
+            <a href="/admin/sc_create">Create subcategory</a>
+        </div>
+    {% endif %}
+
+
+{% for cat in cats %}
+    {% if cat.required_role is none or cat.required_role == user.role.name or user.role.name == "Admin" %}
+        <div class="categories-container">
+            <a href="#">{{ cat.name }}</a>
+            <div class="subcategories-container">
+                {% for subcat in subcats %}
+                    {% if subcat.category_id == cat.id %}
+                        <a href="/forum/sc/{{ subcat.id }}">{{ subcat.name }}</a>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+{% endfor %}
+
+<!-- JS FULLY AI GENERATED -->
+<script>
+const socket = new WebSocket(`ws://${window.location.host}/ws`);
+
+const sendBtn = document.getElementById("send-btn");
+const msgInput = document.getElementById("input-msg");
+const messagesContainer = document.getElementById("chatbox-msgs");
+
+const currentUserId = {{ user.id }};
+
+function appendMessage(senderId, senderName, text) {
+    const div = document.createElement("div");
+    div.className = "cb-msg";
+
+    const label = senderId === currentUserId ? "{{ user.name }}" : senderName;
+    div.innerHTML = `<b>${label}:</b> ${text}`;
+
+    messagesContainer.appendChild(div);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+sendBtn.addEventListener("click", () => {
+    const text = msgInput.value.trim();
+    if (!text) return;
+
+    socket.send(JSON.stringify({ msg: text }));
+    msgInput.value = "";
+});
+
+socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    appendMessage(data.sender_id, data.sender_name, data.msg);
+};
+
+socket.onclose = () => {
+    console.log("chatbox websocket closed");
+};
+</script>
+
+{% endif %}
+{% endblock %}
