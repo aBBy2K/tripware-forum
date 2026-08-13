@@ -1,0 +1,23 @@
+{% extends "bases/base_authed.html" %}
+{% block content %}
+
+<div class="profile-container">
+    <form class="auth-form" method="post">
+        <label for="reason">Reason</label>
+        <select id="reason" name="reason">
+            <option value="Spam / Malware / Scam">Spam / Malware / Scam</option>
+            <option value="Harassment / Hate speech / Dox">Harassment / Hate speech / Dox</option>
+            <option value="NSFW / Sexual content">NSFW / Sexual content</option>
+            <option value="Illegal content">Illegal content</option>
+            <option value="Other">Other (please provide in additional info field)</option>
+        </select>
+        <label for="additional_info">Additional info</label>
+        <textarea placeholder="..." id="additional_info" name="additional_info"></textarea>
+        <input type="submit" value="Report">
+    </form>
+    {% if e %}
+        <p>{{ e }}</p>
+    {% endif %}
+</div>
+
+{% endblock %}

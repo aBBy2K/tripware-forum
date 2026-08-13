@@ -1,0 +1,19 @@
+{% extends "bases/base_unauthed.html" %}
+{% block content %}
+
+<div class="unauthed-container">
+    <form class="auth-form" method="post">
+        <label for="login">Login</label>
+        <input type="text" id="login" name="login" placeholder="hvhboss1337" value="{{ login or '' }}">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="************">
+        <a href="/auth/forgor">I forgot my password</a>
+        <input type="submit" value="Login">
+        <a href="/auth/register">I don't have an account yet</a>
+        {% if e %}
+            <p>{{ e }}</p>
+        {% endif %}
+    </form>
+</div>
+
+{% endblock %}

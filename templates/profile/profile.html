@@ -1,0 +1,25 @@
+{% extends "bases/base_authed.html" %}
+{% block content %}
+
+<div class="profile-container">
+    <div class="main-info">
+        <div class="img-con">
+            <img src="{{ current_user.pfp }}" width="150" height="150">
+            {{ current_user.role.name }}
+        </div>
+        {{ current_user.name }}
+    </div>
+    <div class="profile-links">
+        <a style="border: none" href="/profile/subs">Subscribers ({{ subs_count }})</a>
+        <a style="border: none" href="/profile/subbed">Subscriptions ({{ subbed_count }})</a>
+    </div>
+    <div class="account-nav">
+        <a href="edit">Edit profile</a>
+        <a href="/account/settings">Account settings</a>
+        {% if current_user.role.name == "Admin" %}
+            <a href="/admin">Admin panel</a>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

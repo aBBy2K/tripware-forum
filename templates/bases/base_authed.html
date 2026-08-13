@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="icon" href="/static/assets/favicon.png">
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>tripware</title>
+</head>
+<body>
+    <header>
+        <div class="software-header-info">
+            <a href="/">
+                <img src="/static/assets/favicon.png" width="30px" height="30px">
+            </a>
+            <a href="/">
+                tripware.club
+            </a>
+        </div>
+        <nav>
+            <a href="/">Index</a>
+            <a href="/buy">Subscription</a>
+            <a href="/dms">DMs</a>
+            <a href="/profile">Profile</a>
+            <a href="/profile/logout">Log out</a>
+            <a href="/profile/notifications" class="notif-bell">
+                Notifications
+                <span id="notif-count" style="display:flex">0</span>
+            </a>
+        </nav>
+    </header>
+    <p style="text-align: center">Current online: <span id="cur_online"></span></p>
+    <div class="profile-container">
+        <form method="get" class="msg-chatbox-container" action="/forum/search">
+            <input id="q" name="q" type="text" placeholder="Search...">
+            <input type="submit" value="Search">
+        </form>
+    </div>
+    {% block content %}
+    {% endblock %}
+
+    <script>
+        const notifSocket = new WebSocket(`ws://${window.location.host}/dms/ws`);
+        let unreadCount = 0;
+
+        notifSocket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+
+            if (data.type === "notification") {
+                unreadCount++;
+                const badge = document.getElementById("notif-count");
+                badge.textContent = unreadCount;
+                badge.style.display = "inline";
+            }
+            else if (data.type === "current_online") {
+                const onlineCounter = document.getElementById("cur_online");
+
+                onlineCounter.textContent = data.value;
+            }
+        };
+    </script>
+</body>
+</html>

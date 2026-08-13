@@ -1,0 +1,22 @@
+{% extends "bases/base_authed.html" %}
+{% block content %}
+
+<div class="unauthed-container">
+    <form class="auth-form" method="post" enctype="multipart/form-data">
+        <label for="post_title">Title</label>
+        <textarea id="post_title" name="post_title" placeholder="{{ post.title }}" style="border: 1px solid #323232; background: #232323; height: 20px; resize: none"></textarea>
+        <label for="post_body">Body</label>
+        <textarea id="post_body" name="post_body" placeholder="{{ post.body }}" style="border: 1px solid #323232; background: #232323; height: 100px; width: 700px; resize: none"></textarea>
+        <label for="imgs">Select images</label>
+        <input type="file" name="imgs" id="imgs" accept="image/*" multiple>
+        <div style="display: flex; flex-direction: row">
+            <label for="allow_comms">Allow comments</label>
+            <input type="checkbox" name="allow_comms" id="allow_comms" {% if post.allow_comms%} checked {% endif %}>
+        </div>
+        <input type="submit" value="Create">
+    </form>
+    <p>{{ e }}</p>
+    <p>Already added {{ post_imgs }} images</p>
+</div>
+
+{% endblock %}

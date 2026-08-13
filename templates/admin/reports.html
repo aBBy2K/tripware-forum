@@ -1,0 +1,27 @@
+{% extends "bases/base_authed.html" %}
+{% block content %}
+
+<h1 style="text-align: center">Admin panel</h1>
+    {% if reports %}
+        {% for r in reports %}
+            <div class="profile-container">
+                <h2 style="text-align: center">Report #{{ r.id }}</h2>
+                <p>Reported: <a href="/users/{{ r.user.id }}">{{ r.user.name }}</a></p>
+                <p>Content: <a href="/forum/post/{{ r.post_id }}">View content</a></p>
+                <p>Reason: {{ r.reason }}</p>
+                <p>Additional info: {{ r.additional_info }}</p>
+                <h1>Actions</h1>
+                <div style="display: flex; flex-direction: row">
+                    <a href="/forum/post/{{ r.post_id }}/delete?is_reported=True&uid={{ r.user.id }}">Delete reported content</a>
+                    <a href="/admin/reports/{{ r.id }}/delete">Delete report</a>
+                    <a href="/admin/ban?uid={{ r.user.id }}">Ban content creator</a>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="profile-container">
+            <p>No reports</p>
+        </div>
+    {% endif %}
+
+{% endblock %}

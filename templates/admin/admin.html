@@ -1,0 +1,16 @@
+{% extends "bases/base_authed.html" %}
+{% block content %}
+
+<h1 style="text-align: center">Admin panel</h1>
+<div class="profile-container">
+    <h2>Users</h2>
+    <a href="/admin/ban">Ban/unban user by uid</a>
+</div>
+<div class="profile-container">
+    <h2>Forum</h2>
+    <a href="/admin/reports">View reports</a>
+    <a href="/admin/c_create">Create category</a>
+    <a href="/admin/sc_create">Create subcategory</a>
+</div>
+
+{% endblock %}

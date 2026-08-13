@@ -1,0 +1,21 @@
+{% extends "bases/base_authed.html" %}
+{% block content %}
+
+<h1 style="text-align: center">Admin panel</h1>
+<div class="profile-container">
+    <h2>Ban/unban user by uid</h2>
+    <form method="post" class="auth-form">
+        <label for="uid">UID:</label>
+        {% if uid %}
+            <input type="number" id="uid" name="uid" placeholder="UserID" value="{{ uid }}">
+        {% else %}
+            <input type="number" id="uid" name="uid" placeholder="UserID">
+        {% endif %}
+        <label for="reason">Reason:</label>
+        <input type="text" id="reason" name="reason" placeholder="...">
+        <input type="submit" value="Ban/Unban">
+    </form>
+    <p>{{ e }}</p>
+</div>
+
+{% endblock %}

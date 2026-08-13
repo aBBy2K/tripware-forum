@@ -1,0 +1,76 @@
+{% extends "bases/base_authed.html" %}
+{% block content %}
+{% if pinned_posts %}
+    <div class="posts-container">
+        <h1>Pinned posts</h1>
+        {% for p in pinned_posts %}
+            <div class="post">
+                <div class="post-author">
+                    <img src="{{ p.author.pfp }}" width="50" height="50">
+                </div>
+                <div class="post-content">
+                    <div class="post-title"><a href="/forum/post/{{ p.id }}">{{ p.title }}</a></div>
+                    <div class="post-body"><i>{{ p.body }}</i></div>
+                </div>
+                {% if user.role.name == "Admin" %}
+                    <a class="link-btn" href="/forum/post/{{ p.id }}/pin">Unpin</a>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div class="posts-container">
+    <div class="fullpath">
+        <a href="/">Index</a>
+        <p>/</p>
+        <a href="#">{{ subcat.name }}</a>
+    </div>
+    {% if can_post or user.role.name == "Admin" %}
+        <a href="/forum/{{ subcat.id }}/new">New post</a>
+    {% endif %}
+    {% if posts %}
+        {% for post in posts %}
+            {% if post not in pinned_posts %}
+                <div class="post">
+                    <div class="post-author">
+                        <img src="{{ post.author.pfp }}" width="50" height="50">
+                    </div>
+                    <div class="post-content">
+                        <div class="post-title"><a href="/forum/post/{{ post.id }}">{{ post.title }}</a></div>
+                        <div class="post-body"><i>{{ post.body }}</i></div>
+                    </div>
+                    {% if user.role.name == "Admin" %}
+                        <a class="link-btn" href="/forum/post/{{ post.id }}/pin">Pin</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% endfor %}
+    <div class="lil-nav">
+        {% if page == 1 %}
+            <a href="#"><strike>≤</strike></a>
+            {% for p in range(pages) %}
+                {% if p + 1 == page %}
+                    <a href="?page={{ p + 1 }}">[{{ p + 1 }}]</a>
+                {% else %}
+                    <a href="?page={{ p + 1 }}">{{ p + 1 }}</a>
+                {% endif %}
+            {% endfor %}
+            <a href="?page=1">≥</a>
+        {% else %}
+            <a href="?page={{ page - 1 }}">≤</a>
+            {% for p in range(pages) %}
+                {% if p + 1 == page %}
+                    <a href="?page={{ p + 1 }}">[{{ p + 1 }}]</a>
+                {% else %}
+                    <a href="?page={{ p + 1 }}">{{ p + 1 }}</a>
+                {% endif %}
+            {% endfor %}
+            <a href="?page={{ pages }}">≥</a>
+        {% endif %}
+    </div>
+    {% else %}
+        <p>There's no posts yet :(</p>
+    {% endif %}
+</div>
+{% endblock %}

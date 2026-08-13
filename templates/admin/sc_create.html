@@ -1,0 +1,27 @@
+{% extends "bases/base_authed.html" %}
+{% block content %}
+
+<div class="profile-container">
+    <form class="auth-form" method="post">
+        <label for="name">Subcategory name</label>
+        <input type="text" id="name" name="name">
+        <label for="c_cat">Category</label>
+        <select id="c_cat" name="c_cat">
+            {% for cat in cats %}
+                <option value="{{ cat.id }}">{{ cat.name }} - id {{ cat.id }}</option>
+            {% endfor %}
+        </select>
+        <label for="role">Required role</label>
+        <select id="role" name="role">
+            <option value="None">None</option>
+            <option value="Premium">Premium</option>
+            <option value="Admin">Admin</option>
+        </select>
+        <input type="submit" value="Create">
+    </form>
+    {% if e %}
+        <p>{{ e }}</p>
+    {% endif %}
+</div>
+
+{% endblock %}
