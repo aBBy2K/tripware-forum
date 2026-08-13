@@ -25,3 +25,13 @@ class NotificationsService:
         })
 
         return notification
+
+    @staticmethod
+    async def mark_as_read(nid, current_user, db):
+        notif = await NotificationsRepository.get_by_id(nid, db)
+
+        if notif.user_id != current_user.id:
+            return {"success": False, "message": "no permission"}
+        else:
+            res = await NotificationsRepository.mark_as_read(notif, current_user, db)
+            return {"success": True}

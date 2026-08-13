@@ -10,6 +10,7 @@ from repositories.notifications import NotificationsRepository
 from repositories.users import UsersRepository
 from security.auth import get_current_user
 from services.auth_service import AuthService
+from services.notifications import NotificationsService
 from services.profile_service import ProfileService
 from templates.template_config import template
 
@@ -35,6 +36,24 @@ async def notifications_page(request: Request, current_user = Depends(get_curren
         context={"notifs": notifications}
     )
 
+@router.get("/notifications/{nid}/read")
+async def notifications_page(request: Request, nid: int, current_user = Depends(get_current_user), db = Depends(get_db)):
+    res = await NotificationsService.mark_as_read(nid, current_user, db)
+
+    if not res["success"]:
+        raise HTTPException(
+            status_code=403,
+            detail=str(res["message"])
+        )
+
+    ref_url = request.headers.get("referer")
+
+    if not ref_url:
+        ref_url = "/"
+
+    return RedirectResponse(
+        url=ref_url
+    )
 @router.get("/logout")
 def logout(request: Request):
     response = RedirectResponse(
