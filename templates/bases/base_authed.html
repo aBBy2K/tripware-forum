@@ -42,24 +42,67 @@
     {% endblock %}
 
     <script>
-        const notifSocket = new WebSocket(`ws://${window.location.host}/dms/ws`);
-        let unreadCount = 0;
+    const notifSocket = new WebSocket(`ws://${window.location.host}/dms/ws`);
+    let unreadCount = 0;
 
-        notifSocket.onmessage = (event) => {
-            const data = JSON.parse(event.data);
+    function showNotification(head, body) {
+        const notification = document.createElement("div");
 
-            if (data.type === "notification") {
-                unreadCount++;
-                const badge = document.getElementById("notif-count");
-                badge.textContent = unreadCount;
-                badge.style.display = "inline";
-            }
-            else if (data.type === "current_online") {
-                const onlineCounter = document.getElementById("cur_online");
+        notification.style.position = "fixed";
+        notification.style.right = "20px";
+        notification.style.bottom = "20px";
+        notification.style.width = "320px";
+        notification.style.padding = "15px";
+        notification.style.background = "#1b1b1b";
+        notification.style.border = "1px solid #323232";
+        notification.style.borderRadius = "6px";
+        notification.style.color = "#fff";
+        notification.style.zIndex = "9999";
+        notification.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.4)";
 
-                onlineCounter.textContent = data.value;
-            }
-        };
-    </script>
+        notification.innerHTML = `
+            <h1 style="font-size: 18px; margin: 0 0 8px 0;">
+                ${head}
+            </h1>
+
+            <p style="margin: 0 0 8px 0;">
+                ${body}
+            </p>
+
+            <p style="margin: 0; font-size: 13px;">
+                Just now |
+                <a href="/profile/notifications" style="color: inherit;">
+                    Notifications
+                </a>
+            </p>
+        `;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+    }
+
+    notifSocket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.type === "notification") {
+            unreadCount++;
+
+            const badge = document.getElementById("notif-count");
+            badge.textContent = unreadCount;
+            badge.style.display = "inline";
+
+            showNotification(data.head, data.body);
+        }
+
+        else if (data.type === "current_online") {
+            const onlineCounter = document.getElementById("cur_online");
+
+            onlineCounter.textContent = data.value;
+        }
+    };
+</script>
 </body>
 </html>
