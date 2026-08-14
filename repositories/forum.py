@@ -173,11 +173,13 @@ class ForumRepository:
         return imgs_c
 
     @classmethod
-    async def pin(cls, post, db):
+    async def pin(cls, pid, db):
+        post = await ForumRepository.get_post_by_id(pid, db)
         post.is_pinned = True
         await db.commit()
 
     @classmethod
-    async def unpin(cls, post, db):
+    async def unpin(cls, pid, db):
+        post = await ForumRepository.get_post_by_id(pid, db)
         post.is_pinned = False
         await db.commit()

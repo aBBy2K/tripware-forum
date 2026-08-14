@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 from pydantic import EmailStr
 
+from core.redis_conf import redis
 from database.database import get_db
 from models import Users
 from repositories.admin_forum import AdminForumRepository
@@ -88,6 +89,12 @@ async def create_category(request: Request, name: str = Form(), c_cat: str = For
     )
 
 @router.get("/reports/{rid}/delete")
-async def delete_report(request: Request, rid: int, db = Depends(get_db), current_user = Depends(get_current_user)):
+async def delete_report(request: Request, rid: int, db = Depends(get_db), current_user = Depends(get_current_user), admin = Depends(require_admin)):
     delete = await AdminForumRepository.delete_report(rid, db)
     return {"success": True, "message": "Deleted"}
+
+@router.get("/flushredis")
+async def flush_redis_cache(request: Request, current_user = Depends(get_current_user), admin = Depends(require_admin)):
+    await redis.flushdb()
+    print("cache is flushed")
+    return {"success": True, "message": "flushed"}
