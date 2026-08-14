@@ -150,14 +150,8 @@ class ForumService:
 
                 add_img = await ForumRepository.add_post_img(f"/{fullpath}", post.id, db)
 
-        print("BEFORE:", post.allow_comms)
-
         for k, v in data.items():
-            print("SETTING:", k, repr(v))
             setattr(post, k, v)
-            print("AFTER SETATTR:", post.allow_comms)
-
-        print("FINAL:", post.allow_comms)
 
         await db.commit()
 
@@ -274,19 +268,26 @@ class ForumService:
 
     @staticmethod
     async def new_comment(comment, pid, db, current_user):
-        post = await ForumRepository.get_post_by_id(pid, db)
+        no_permission_exc = HTTPException(status_code=403, detail="no permission")
 
-        if not post:
-            raise HTTPException(
-                status_code=404,
-                detail="post not found"
-            )
+        cached = await redis.get(f"post:{pid}")
 
-        if not post.allow_comms or current_user.role.name != "Admin" and post.subcategory.required_role != current_user.role.name:
-            raise HTTPException(
-                status_code=403,
-                detail="no permission"
-            )
+        if cached:
+            post = json.loads(cached)
+
+            if not post["allow_comms"] or current_user["role"]["name"] != "Admin" and post["subcategory"]["required_role"] != current_user["role"]["name"]:
+                raise no_permission_exc
+        else:
+            post = await ForumRepository.get_post_by_id(pid, db)
+
+            if not post:
+                raise HTTPException(
+                    status_code=404,
+                    detail="post not found"
+                )
+
+            if not post.allow_comms or current_user.role.name != "Admin" and post.subcategory.required_role != current_user.role.name:
+                raise no_permission_exc
 
         msg = await ForumRepository.create_comment(comment, pid, db, current_user)
 
