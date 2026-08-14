@@ -93,7 +93,7 @@ async def report(request: Request, post_id: int, reason: str = Form(), additiona
     )
 
 @router.get("/post/{post_id}/delete")
-async def delete_post(request: Request, is_reported: bool | None, uid: int | None, post_id: int, db = Depends(get_db), current_user = Depends(get_current_user)):
+async def delete_post(request: Request, post_id: int, db = Depends(get_db), current_user = Depends(get_current_user), is_reported: bool | None = None, uid: int | None = None):
     #uid пользователя который пожаловался на пост
 
     post = await ForumRepository.get_post_by_id(post_id, db)

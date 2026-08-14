@@ -57,6 +57,7 @@ class ForumService:
                 "created_at": post.created_at.isoformat(),
                 "views": post.views,
                 "allow_comms": post.allow_comms,
+                "is_pinned": post.is_pinned,
 
                 "author": {
                     "id": post.author.id,
@@ -101,7 +102,7 @@ class ForumService:
 
             print("comments:", post.allow_comms)
 
-            return {"post": post, "allow_comments": allow_comments}
+            return {"post": post_cache, "allow_comments": allow_comments}
 
     @staticmethod
     async def edit_post(post, post_title: str, post_body: str, imgs, aa_imgs, allow_comms: bool, db):
@@ -165,6 +166,7 @@ class ForumService:
                 "created_at": post.created_at.isoformat(),
                 "views": post.views,
                 "allow_comms": post.allow_comms,
+                "is_pinned": post.is_pinned,
 
                 "author": {
                     "id": post.author.id,
@@ -275,7 +277,7 @@ class ForumService:
         if cached:
             post = json.loads(cached)
 
-            if not post["allow_comms"] or current_user["role"]["name"] != "Admin" and post["subcategory"]["required_role"] != current_user["role"]["name"]:
+            if not post["allow_comms"] or current_user.role.name != "Admin" and post["subcategory"]["required_role"] != current_user.role.name:
                 raise no_permission_exc
         else:
             post = await ForumRepository.get_post_by_id(pid, db)
@@ -291,13 +293,13 @@ class ForumService:
 
         msg = await ForumRepository.create_comment(comment, pid, db, current_user)
 
-        if current_user.id != post.author.id:
+        if current_user.id != post["author"]["id"]:
             await NotificationsService.add_notif(
                 n_type="notification",
                 head="User replied to your post",
-                body=f"{current_user.name} replied to your post - '{post.title}'",
+                body=f"{current_user.name} replied to your post - '{post["title"]}'",
                 is_read=False,
-                user_id=post.author.id,
+                user_id=post["author"]["id"],
                 db=db
             )
 
@@ -331,10 +333,10 @@ class ForumService:
 
     @staticmethod
     async def delete_post(pid, db, is_reported, uid, current_user):
-        post = await ForumRepository.get_post_by_id(pid, db)
+        post = await ForumService.get_post(pid, db, current_user)
         imgs = await ForumRepository.get_imgs_by_post(pid, db)
 
-        if current_user.role.name == "Admin" or post.author.id == current_user.id:
+        if current_user.role.name == "Admin" or post["author"]["id"] == current_user.id:
             if imgs:
                 await ForumRepository.delete_imgs_from_db(pid, db)
 
@@ -402,7 +404,7 @@ class ForumService:
                 detail="no permission"
             )
 
-        post = await ForumRepository.get_post_by_id(pid, db)
+        post = await ForumService.get_post(pid, db, current_user)
 
         if not post:
             raise HTTPException(
@@ -410,7 +412,10 @@ class ForumService:
                 detail="not found"
             )
 
-        if post.is_pinned:
-            await ForumRepository.unpin(post, db)
+        if post["post"]["is_pinned"]:
+            await ForumRepository.unpin(pid, db)
         else:
-            await ForumRepository.pin(post, db)
+            await ForumRepository.pin(pid, db)
+
+        await db.commit()
+        await redis.delete(f"post:{pid}")
