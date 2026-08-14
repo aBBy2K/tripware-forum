@@ -21,7 +21,6 @@ class NotificationsService:
         await manager.notify(user_id, {
             "head": head,
             "body": body,
-            "type": n_type
         })
 
         return notification
