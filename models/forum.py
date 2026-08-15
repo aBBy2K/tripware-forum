@@ -39,6 +39,7 @@ class Posts(Base):
     author: Mapped["Users"] = relationship(foreign_keys=[author_id])
     subcategory: Mapped["SubCategories"] = relationship(foreign_keys=[subcategory_id])
     images: Mapped[List["PostImages"]] = relationship(back_populates="post")
+    stats: Mapped[List["PostLikes"]] = relationship(back_populates="post")
 
 
 class PostImages(Base):
@@ -71,6 +72,8 @@ class PostLikes(Base):
 
     post_id: Mapped[int] = mapped_column(Integer, ForeignKey("posts.id"))
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
+
+    post: Mapped["Posts"] = relationship(foreign_keys=[post_id], back_populates="stats")
 
 class Reports(Base):
     __tablename__ = "reports"

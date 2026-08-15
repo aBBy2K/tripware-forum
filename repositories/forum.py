@@ -161,6 +161,12 @@ class ForumRepository:
         return likes
 
     @classmethod
+    async def get_post_likes(cls, pid, db):
+        stmt = select(PostLikes.user_id).where(PostLikes.post_id == pid)
+        likes = await db.scalars(stmt)
+        return likes.all()
+
+    @classmethod
     async def get_posts_count_subcat(cls, subcat, db):
         stmt = select(func.count()).where(Posts.subcategory_id == subcat.id)
         posts_in_sc = await db.scalar(stmt)

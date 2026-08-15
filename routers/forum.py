@@ -63,16 +63,22 @@ async def post_page(request: Request, post_id: int, db = Depends(get_db), curren
         )
 
     comments = await ForumRepository.get_post_comments(post_id, db)
-    is_liked = await ForumRepository.get_user_post_like(post_id, current_user, db)
-    liked_ids = await ForumRepository.get_liked_cmnts_ids(post_id, current_user, db)
-    likes_count = await ForumRepository.get_post_stats(post_id, db)
+    # is_liked = await ForumRepository.get_user_post_like(post_id, current_user, db)
+    # liked_ids = await ForumRepository.get_liked_cmnts_ids(post_id, current_user, db)
+    # likes_count = await ForumRepository.get_post_stats(post_id, db)
 
     await redis.incr(f"post:{post_id}:views")
+    likes_count = await redis.scard(f"post:{post_id}:likes")
+
+    is_liked = await redis.sismember(
+        f"post:{post_id}:likes",
+        current_user.id
+    )
 
     return template.TemplateResponse(
         request=request,
         name="forum/post.html",
-        context={"post": post["post"], "allow_comments": post["allow_comments"], "comments": comments, "is_liked": is_liked, "liked": liked_ids, "current_user": current_user, "likes": likes_count}
+        context={"post": post["post"], "allow_comments": post["allow_comments"], "comments": comments, "is_liked": is_liked, "liked": post["likes_uids"], "current_user": current_user, "likes": likes_count}
     )
 
 @router.get("/post/{post_id}/report")
