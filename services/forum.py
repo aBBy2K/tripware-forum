@@ -4,6 +4,7 @@ import secrets
 from fastapi import HTTPException
 from pydantic import ValidationError
 from starlette.concurrency import run_in_threadpool
+from watchfiles import awatch
 
 from core.redis_conf import redis
 from repositories.admin_forum import AdminForumRepository
@@ -28,6 +29,21 @@ class ForumService:
         if cache:
             post = json.loads(cache)
 
+            if not redis.exists(f"post:{pid}:likes:initialized"):
+                liked_uids = await ForumRepository.get_post_likes(pid, db)
+
+                if liked_uids:
+                    await redis.sadd(
+                        f"post:{post.id}:likes",
+                        *liked_uids
+                    )
+
+                await redis.set(
+                    f"post:{post.id}:likes:initialized",
+                    "1",
+                    ex=300
+                )
+
             if post["subcategory"]["category"]["required_role"] and current_user.role.name != "Admin" and current_user.role.name != post["subcategory"]["category"]["required_role"]:
                 raise HTTPException(
                     status_code=403,
@@ -35,12 +51,31 @@ class ForumService:
                 )
 
             allow_comments = post["allow_comms"]
+            likes_uids = {
+                int(uid)
+                for uid in await redis.smembers(f"post:{pid}:likes")
+            }
 
             print("[+] found in cache")
-            return {"post": post, "allow_comments": allow_comments}
+            return {"post": post, "allow_comments": allow_comments, "likes_uids": likes_uids}
         else:
             print("[-] not found in cache")
             post = await AdminForumRepository.get_post_by_id(pid, db)
+
+            if not await redis.exists(f"post:{post.id}:likes:initialized"):
+                liked_uids = await ForumRepository.get_post_likes(pid, db)
+
+                if liked_uids:
+                    await redis.sadd(
+                        f"post:{post.id}:likes",
+                        *liked_uids
+                    )
+
+                await redis.set(
+                    f"post:{post.id}:likes:initialized",
+                    "1",
+                    ex=300
+                )
 
             if post.subcategory.category.required_role and current_user.role.name != "Admin" and current_user.role.name != post.subcategory.category.required_role:
                 raise HTTPException(
@@ -99,10 +134,14 @@ class ForumService:
             print("[+] cached")
 
             allow_comments = post.allow_comms
+            likes_uids = {
+                int(uid)
+                for uid in await redis.smembers(f"post:{pid}:likes")
+            }
 
             print("comments:", post.allow_comms)
 
-            return {"post": post_cache, "allow_comments": allow_comments}
+            return {"post": post_cache, "allow_comments": allow_comments, "likes_uids": likes_uids}
 
     @staticmethod
     async def edit_post(post, post_title: str, post_body: str, imgs, aa_imgs, allow_comms: bool, db):
@@ -157,55 +196,48 @@ class ForumService:
         await db.commit()
 
         if cached:
-            post_cache = {
-                "id": post.id,
-                "title": post.title,
-                "body": post.body,
-                "author_id": post.author_id,
-                "subcategory_id": post.subcategory_id,
-                "created_at": post.created_at.isoformat(),
-                "views": post.views,
-                "allow_comms": post.allow_comms,
-                "is_pinned": post.is_pinned,
-
-                "author": {
-                    "id": post.author.id,
-                    "login": post.author.login,
-                    "name": post.author.name,
-                    "pfp": post.author.pfp,
-                    "role": {
-                        "id": post.author.role.id,
-                        "name": post.author.role.name,
-                    },
-                },
-
-                "subcategory": {
-                    "id": post.subcategory.id,
-                    "name": post.subcategory.name,
-                    "required_role": post.subcategory.required_role,
-                    "category": {
-                        "id": post.subcategory.category.id,
-                        "name": post.subcategory.category.name,
-                        "required_role": post.subcategory.category.required_role,
-                    },
-                },
-
-                "images": [
-                    {
-                        "id": image.id,
-                        "path": image.path,
-                    }
-                    for image in post.images
-                ],
-            }
-
-            await redis.set(
-                f"post:{post.id}",
-                json.dumps(post_cache),
-                ex=300
-            )
-
-            print("[+] edit cached")
+            await redis.delete(f"post:{post.id}")
+            # post_cache = {
+            #     "id": post.id,
+            #     "title": post.title,
+            #     "body": post.body,
+            #     "author_id": post.author_id,
+            #     "subcategory_id": post.subcategory_id,
+            #     "created_at": post.created_at.isoformat(),
+            #     "views": post.views,
+            #     "allow_comms": post.allow_comms,
+            #     "is_pinned": post.is_pinned,
+            #
+            #     "author": {
+            #         "id": post.author.id,
+            #         "login": post.author.login,
+            #         "name": post.author.name,
+            #         "pfp": post.author.pfp,
+            #         "role": {
+            #             "id": post.author.role.id,
+            #             "name": post.author.role.name,
+            #         },
+            #     },
+            #
+            #     "subcategory": {
+            #         "id": post.subcategory.id,
+            #         "name": post.subcategory.name,
+            #         "required_role": post.subcategory.required_role,
+            #         "category": {
+            #             "id": post.subcategory.category.id,
+            #             "name": post.subcategory.category.name,
+            #             "required_role": post.subcategory.category.required_role,
+            #         },
+            #     },
+            #
+            #     "images": [
+            #         {
+            #             "id": image.id,
+            #             "path": image.path,
+            #         }
+            #         for image in post.images
+            #     ],
+            #}
 
         return {
             "success": True,
@@ -314,6 +346,10 @@ class ForumService:
 
         if is_liked:
             like = await ForumRepository.unlike(pid, db, current_user)
+            await redis.srem(
+                f"post:{pid}:likes",
+                current_user.id
+            )
             await manager.post_updates(pid, data={
                 "post_id": pid,
                 "type": "unlike",
@@ -321,6 +357,10 @@ class ForumService:
             })
         else:
             unlike = await ForumRepository.like(pid, db, current_user)
+            await redis.sadd(
+                f"post:{pid}:likes",
+                current_user.id
+            )
             await manager.post_updates(pid, data={
                 "post_id": pid,
                 "type": "like",
