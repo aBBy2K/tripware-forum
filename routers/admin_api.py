@@ -1,3 +1,4 @@
+import asyncio
 from typing import Annotated
 from fastapi import Depends, APIRouter, Form, HTTPException, UploadFile, File
 from fastapi.requests import Request
@@ -6,7 +7,7 @@ from fastapi.responses import RedirectResponse
 from pydantic import EmailStr
 
 from core.redis_conf import redis
-from database.database import get_db
+from database.database import get_db, engine
 from models import Users
 from repositories.admin_forum import AdminForumRepository
 from security.auth import get_current_user
@@ -98,3 +99,18 @@ async def flush_redis_cache(request: Request, current_user = Depends(get_current
     await redis.flushdb()
     print("cache is flushed")
     return {"success": True, "message": "flushed"}
+
+@router.get("/pool")
+async def pool(request: Request, current_user = Depends(get_current_user), admin = Depends(require_admin)):
+    print(engine.pool.status())
+    return {"see console"}
+
+@router.get("/pool_test")
+async def pool():
+    print("BEFORE:", engine.pool.status())
+
+    await asyncio.sleep(5)
+
+    print("AFTER:", engine.pool.status())
+
+    return {"ok": True}

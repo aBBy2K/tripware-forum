@@ -14,7 +14,7 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 @router.get("/{user_id}")
 async def user_page(request: Request, user_id: int, db = Depends(get_db), current_user = Depends(get_current_user)):
-    user = await UsersRepository.get_by_id(db, user_id)
+    user = await UsersService.get_user(user_id, db)
     is_followed = await UsersRepository.get_follow(current_user.id, user_id, db)
     is_online = await UsersService.online_check(user_id)
     return template.TemplateResponse(

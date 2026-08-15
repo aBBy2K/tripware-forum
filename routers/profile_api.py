@@ -12,6 +12,7 @@ from security.auth import get_current_user
 from services.auth_service import AuthService
 from services.notifications import NotificationsService
 from services.profile_service import ProfileService
+from services.users import UsersService
 from templates.template_config import template
 
 router = APIRouter(prefix="/profile", tags=["Profile"])
@@ -96,7 +97,7 @@ async def subs_page(request: Request, db = Depends(get_db), current_user = Depen
     subs_list = []
 
     for sub in subs:
-        target = await UsersRepository.get_by_id(db, sub)
+        target = await UsersService.get_user(sub, db)
         subs_list.append(target)
 
 
@@ -113,7 +114,7 @@ async def subs_page(request: Request, db = Depends(get_db), current_user = Depen
     subbed_list = []
 
     for sub in subbed:
-        target = await UsersRepository.get_by_id(db, sub)
+        target = await UsersService.get_user(sub, db)
         subbed_list.append(target)
 
 

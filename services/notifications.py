@@ -2,13 +2,14 @@ from fastapi import HTTPException
 
 from repositories.notifications import NotificationsRepository
 from repositories.users import UsersRepository
+from services.users import UsersService
 from websocket.manager import manager
 
 
 class NotificationsService:
     @staticmethod
     async def add_notif(n_type, head, body, is_read, user_id, db):
-        user = await UsersRepository.get_by_id(db, user_id)
+        user = await UsersService.get_user(user_id, db)
 
         if not user:
             raise HTTPException(

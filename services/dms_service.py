@@ -1,6 +1,6 @@
 from fastapi import WebSocket, WebSocketException, WebSocketDisconnect, Depends
 
-from database.database import get_db
+from database.database import get_db, SessionLocal, engine
 from models.messages import Messages
 from repositories.messages import MsgRepository
 from security.auth import get_current_user_ws
@@ -8,7 +8,7 @@ from websocket.manager import manager
 
 class DMsServices:
     @staticmethod
-    async def ws(websocket: WebSocket, current_user, db):
+    async def ws(websocket: WebSocket, current_user):
         await websocket.accept()
         await manager.connect(current_user.id, websocket)
 
@@ -19,7 +19,8 @@ class DMsServices:
                 recipient_id = data["recipient_id"]
                 msg = data["msg"]
 
-                message = await MsgRepository.create(sender_id=current_user.id, recipient_id=recipient_id, msg=msg, db=db)
+                async with SessionLocal() as db:
+                    message = await MsgRepository.create(sender_id=current_user.id, recipient_id=recipient_id, msg=msg, db=db)
 
                 if message is None:
                     continue
@@ -36,5 +37,10 @@ class DMsServices:
             import traceback
             traceback.print_exc()
         finally:
+            print(
+                "WS CLOSED:",
+                current_user.id,
+                engine.pool.status()
+            )
             await manager.disconnect(current_user.id, websocket)
 

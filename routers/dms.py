@@ -11,6 +11,7 @@ from security.auth import get_current_user, get_current_user_ws
 from services.auth_service import AuthService
 from services.dms_service import DMsServices
 from services.profile_service import ProfileService
+from services.users import UsersService
 from templates.template_config import template
 
 router = APIRouter(prefix="/dms", tags=["DMs"])
@@ -27,7 +28,7 @@ async def messenger(request: Request, current_user = Depends(get_current_user), 
 
 @router.get("/{user_id}")
 async def chat_page(request: Request, user_id: int, db = Depends(get_db), current_user = Depends(get_current_user)):
-    recipient = await UsersRepository.get_by_id(db=db, uid=user_id)
+    recipient = await UsersService.get_user(user_id, db)
 
     if not recipient:
         return template.TemplateResponse(
@@ -45,5 +46,10 @@ async def chat_page(request: Request, user_id: int, db = Depends(get_db), curren
     )
 
 @router.websocket("/ws")
-async def ws(ws: WebSocket, current_user = Depends(get_current_user_ws), db = Depends(get_db)):
-    result = await DMsServices.ws(ws, current_user, db)
+async def ws(ws: WebSocket, current_user = Depends(get_current_user_ws)):
+    print(
+        "WS CONNECTED:",
+        current_user.id
+    )
+
+    result = await DMsServices.ws(ws, current_user)

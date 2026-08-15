@@ -3,6 +3,7 @@ from passlib.hash import bcrypt
 
 from repositories.admin_forum import AdminForumRepository
 from repositories.users import UsersRepository
+from services.users import UsersService
 
 
 class AdminForumService:
@@ -44,7 +45,7 @@ class AdminForumService:
 
     @staticmethod
     async def ban_unban(db, uid, reason):
-        user = await UsersRepository.get_by_id(db, uid)
+        user = await UsersService.get_user(uid, db)
 
         if not user:
             raise HTTPException(
@@ -52,7 +53,7 @@ class AdminForumService:
                 detail="user not found"
             )
 
-        if user.is_banned:
+        if user["is_banned"]:
             unban = await AdminForumRepository.unban(user, db)
             msg = "User has been unbanned"
         else:
