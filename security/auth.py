@@ -4,7 +4,7 @@ from fastapi.responses import RedirectResponse
 from jose import jwt, JWTError
 from sqlalchemy import select
 
-from database.database import get_db
+from database.database import get_db, engine, SessionLocal
 from models.users import Users
 from repositories.users import UsersRepository
 from config import DB_SECRET_KEY
@@ -73,16 +73,31 @@ async def get_current_user(request: Request, db = Depends(get_db)):
 
     return user
 
-#ws
-async def get_current_user_ws(websocket: WebSocket, db = Depends(get_db)):
+async def get_current_user_ws(websocket: WebSocket):
+    print(
+        "WS AUTH START",
+        websocket.client
+    )
+
     token = websocket.cookies.get("token")
 
-    user = await _get_user_from_token(token, db)
+    async with SessionLocal() as db:
+        user = await _get_user_from_token(token, db)
+
+    print(
+        "WS AUTH END",
+        websocket.client,
+        engine.pool.status()
+    )
 
     if not user:
-       raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
-   
-    if user and user.is_banned:
-       raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
+        raise WebSocketException(
+            code=status.WS_1008_POLICY_VIOLATION
+        )
+
+    if user.is_banned:
+        raise WebSocketException(
+            code=status.WS_1008_POLICY_VIOLATION
+        )
 
     return user

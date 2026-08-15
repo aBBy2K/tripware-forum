@@ -10,7 +10,7 @@ from core.redis_conf import redis
 from repositories.admin_forum import AdminForumRepository
 from repositories.chatbox import CBMSGSRepository
 from security.auth import get_current_user, get_current_user_ws
-from database.database import get_db, SessionLocal
+from database.database import get_db, SessionLocal, engine
 from services.chatbox_service import CBService
 from services.forum import ForumService
 from templates.template_config import template
@@ -28,9 +28,11 @@ from routers.users import router as user
 
 async def sync_views_loop():
         while True:
+            print("POOL: ", engine.pool.status())
             async with SessionLocal() as db:
                 await ForumService.sync_views(db)
                 print("views synced with db")
+            print("POOL: ", engine.pool.status())
             await asyncio.sleep(60)
 
 @asynccontextmanager
@@ -79,5 +81,5 @@ async def index(request: Request, current_user = Depends(get_current_user), db =
         )
 
 @app.websocket("/ws")
-async def ws(websocket: WebSocket, current_user = Depends(get_current_user_ws), db = Depends(get_db)):
-    message = await CBService.ws(websocket, current_user, db)
+async def ws(websocket: WebSocket, current_user = Depends(get_current_user_ws)):
+    message = await CBService.ws(websocket, current_user)

@@ -8,6 +8,8 @@ engine = create_async_engine(
     echo=False
 )
 
+print("POOL: ", engine.pool.status())
+
 SessionLocal = async_sessionmaker(
     bind=engine,
     class_=AsyncSession,
