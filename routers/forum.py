@@ -53,7 +53,9 @@ async def search(request: Request, q: str = "", db = Depends(get_db), current_us
     )
 
 @router.get("/post/{post_id}")
-async def post_page(request: Request, post_id: int, db = Depends(get_db), current_user = Depends(get_current_user)):
+async def post_page(request: Request, post_id: int, page: int = 1, db = Depends(get_db), current_user = Depends(get_current_user)):
+
+
     post = await ForumService.get_post(post_id, db, current_user)
 
     if not post:
@@ -62,7 +64,8 @@ async def post_page(request: Request, post_id: int, db = Depends(get_db), curren
             detail="post not found"
         )
 
-    comments = await ForumRepository.get_post_comments(post_id, db)
+
+    total_comms = await ForumRepository.get_total_post_comms_count(post_id, db)
     # is_liked = await ForumRepository.get_user_post_like(post_id, current_user, db)
     # liked_ids = await ForumRepository.get_liked_cmnts_ids(post_id, current_user, db)
     # likes_count = await ForumRepository.get_post_stats(post_id, db)
@@ -70,6 +73,13 @@ async def post_page(request: Request, post_id: int, db = Depends(get_db), curren
     await redis.incr(f"post:{post_id}:views")
     likes_count = await redis.scard(f"post:{post_id}:likes")
 
+    total_pages = math.ceil(total_comms / 5)
+
+    page = min(page, total_pages)
+    page = max(page, 1)
+
+    offset = (page - 1) * 5
+    comments = await ForumRepository.get_post_comments_pagination(post_id, db, offset)
     is_liked = await redis.sismember(
         f"post:{post_id}:likes",
         current_user.id
@@ -78,7 +88,7 @@ async def post_page(request: Request, post_id: int, db = Depends(get_db), curren
     return template.TemplateResponse(
         request=request,
         name="forum/post.html",
-        context={"post": post["post"], "allow_comments": post["allow_comments"], "comments": comments, "is_liked": is_liked, "liked": post["likes_uids"], "current_user": current_user, "likes": likes_count}
+        context={"post": post["post"], "allow_comments": post["allow_comments"], "page": page, "comments": comments, "total_comms": total_comms, "pages": total_pages, "is_liked": is_liked, "liked": post["likes_uids"], "current_user": current_user, "likes": likes_count}
     )
 
 @router.get("/post/{post_id}/report")
