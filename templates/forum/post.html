@@ -94,6 +94,32 @@
     </div>
 {% endif %}
 
+<div class="posts-container">
+    <div class="lil-nav">
+        {% if page == 1 %}
+            <a href="#"><strike>≤</strike></a>
+            {% for p in range(pages) %}
+                {% if p + 1 == page %}
+                    <a href="?page={{ p + 1 }}">[{{ p + 1 }}]</a>
+                {% else %}
+                    <a href="?page={{ p + 1 }}">{{ p + 1 }}</a>
+                {% endif %}
+            {% endfor %}
+            <a href="?page={{ pages }}">≥</a>
+        {% else %}
+            <a href="?page={{ page - 1 }}">≤</a>
+            {% for p in range(pages) %}
+                {% if p + 1 == page %}
+                    <a href="?page={{ p + 1 }}">[{{ p + 1 }}]</a>
+                {% else %}
+                    <a href="?page={{ p + 1 }}">{{ p + 1 }}</a>
+                {% endif %}
+            {% endfor %}
+        <a href="?page={{ pages }}">≥</a>
+    {% endif %}
+</div>
+</div>
+
 <script>
 const token = document.cookie
     .split("; ")

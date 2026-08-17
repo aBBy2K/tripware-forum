@@ -48,6 +48,18 @@ class ForumRepository:
         return comments.all()
 
     @classmethod
+    async def get_post_comments_pagination(cls, pid, db, offset):
+        stmt = select(PostComments).where(PostComments.post_id == pid).options(selectinload(PostComments.author)).offset(offset).limit(5)
+        comments = await db.scalars(stmt)
+        return comments.all()
+
+    @classmethod
+    async def get_total_post_comms_count(cls, pid, db):
+        stmt = select(func.count()).where(PostComments.post_id == pid)
+        comms = await db.scalar(stmt)
+        return comms
+
+    @classmethod
     async def get_user_post_like(cls, pid, current_user, db):
         stmt = select(PostLikes).where(and_(PostLikes.user_id == current_user.id, PostLikes.post_id == pid))
         like = await db.scalar(stmt)
