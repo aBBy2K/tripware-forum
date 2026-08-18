@@ -188,6 +188,34 @@ class ForumService:
         return comments
 
     @staticmethod
+    async def get_comms_likes_ids(pid, db, current_user):
+        key = f"post:{pid}:{current_user.id}:likes"
+        initialized_key = f"{key}:initialized"
+
+        liked_ids = await redis.smembers(key)
+
+        if liked_ids:
+            return {int(x) for x in liked_ids}
+
+        if not await redis.exists(initialized_key):
+            print("[-] not found likes comments in cache. caching...")
+
+            liked_ids = await ForumRepository.get_liked_cmnts_ids(
+                pid,
+                current_user,
+                db
+            )
+
+            if liked_ids:
+                await redis.sadd(key, *liked_ids)
+
+            await redis.set(initialized_key, "1")
+
+            print("[+] cached")
+
+        return {int(x) for x in await redis.smembers(key)}
+
+    @staticmethod
     async def edit_post(post, post_title: str, post_body: str, imgs, aa_imgs, allow_comms: bool, db):
         cached = await redis.get(f"post:{post.id}")
 
@@ -246,8 +274,6 @@ class ForumService:
             "success": True,
             "message": "Post successfully updated"
         }
-
-
 
     @staticmethod
     async def sync_views(db):
@@ -409,13 +435,21 @@ class ForumService:
             )
 
     @staticmethod
-    async def like_unlike_comment(cid, db, current_user):
+    async def like_unlike_comment(pid, cid, db, current_user):
         is_liked = await ForumRepository.get_user_cmnt_like(cid, current_user, db)
 
         if is_liked:
-            like = await ForumRepository.unlike_comment(cid, current_user, db)
+            await redis.srem(
+                f"post:{pid}:{current_user.id}:likes",
+                cid
+            )
+            unlike = await ForumRepository.unlike_comment(cid, current_user, db)
         else:
-            unlike = await ForumRepository.like_comment(cid, current_user, db)
+            await redis.sadd(
+                f"post:{pid}:{current_user.id}:likes",
+                cid
+            )
+            like = await ForumRepository.like_comment(cid, current_user, db)
 
         return {
             "success": True

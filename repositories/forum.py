@@ -78,6 +78,12 @@ class ForumRepository:
         return set(result.all())
 
     @classmethod
+    async def get_liked_cmnts_uids(cls, cid, db) -> set[int]:
+        stmt = select(CommentsLikes.user_id).where(CommentsLikes.comment_id == cid)
+        result = await db.scalars(stmt)
+        return set(result.all())
+
+    @classmethod
     async def get_pid_by_cid(cls, cid, db):
         stmt = select(PostComments.post_id).where(PostComments.id == cid)
         pid = await db.scalars(stmt)
