@@ -43,7 +43,7 @@ class ForumRepository:
 
     @classmethod
     async def get_post_comments(cls, pid, db):
-        stmt = select(PostComments).where(PostComments.post_id == pid).options(selectinload(PostComments.author))
+        stmt = select(PostComments).where(PostComments.post_id == pid).options(selectinload(PostComments.author).selectinload(Users.role))
         comments = await db.scalars(stmt)
         return comments.all()
 
@@ -201,3 +201,9 @@ class ForumRepository:
         post = await ForumRepository.get_post_by_id(pid, db)
         post.is_pinned = False
         await db.commit()
+
+    @classmethod
+    async def get_post_by_cid(cls, cid, db):
+        stmt = select(PostComments.post_id).where(PostComments.id == cid)
+        post = await db.scalars(stmt)
+        return post.one_or_none()

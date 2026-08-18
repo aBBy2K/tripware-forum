@@ -143,6 +143,50 @@ class ForumService:
 
             return {"post": post_cache, "allow_comments": allow_comments, "likes_uids": likes_uids}
 
+
+    @staticmethod
+    async def get_post_comms(pid, db):
+        cached = await redis.get(f"post:{pid}:comments")
+
+        if cached:
+            print("[+] comments found in cache")
+            comments = json.loads(cached)
+            return comments
+
+        print("[-] comments not found in cache. caching...")
+        comments_db = await ForumRepository.get_post_comments(pid, db)
+
+        comments = [
+            {
+                "id": comment.id,
+                "body": comment.body,
+                "post_id": comment.post_id,
+                "author_id": comment.author_id,
+                "created_at": comment.created_at.isoformat(),
+
+                "author": {
+                    "id": comment.author.id,
+                    "login": comment.author.login,
+                    "name": comment.author.name,
+                    "pfp": comment.author.pfp,
+                    "role": {
+                        "id": comment.author.role.id,
+                        "name": comment.author.role.name,
+                    }
+                }
+            }
+            for comment in comments_db
+        ]
+
+        await redis.set(
+            f"post:{pid}:comments",
+            json.dumps(comments),
+            ex=300
+        )
+
+        print("[+] cached")
+        return comments
+
     @staticmethod
     async def edit_post(post, post_title: str, post_body: str, imgs, aa_imgs, allow_comms: bool, db):
         cached = await redis.get(f"post:{post.id}")
@@ -197,47 +241,6 @@ class ForumService:
 
         if cached:
             await redis.delete(f"post:{post.id}")
-            # post_cache = {
-            #     "id": post.id,
-            #     "title": post.title,
-            #     "body": post.body,
-            #     "author_id": post.author_id,
-            #     "subcategory_id": post.subcategory_id,
-            #     "created_at": post.created_at.isoformat(),
-            #     "views": post.views,
-            #     "allow_comms": post.allow_comms,
-            #     "is_pinned": post.is_pinned,
-            #
-            #     "author": {
-            #         "id": post.author.id,
-            #         "login": post.author.login,
-            #         "name": post.author.name,
-            #         "pfp": post.author.pfp,
-            #         "role": {
-            #             "id": post.author.role.id,
-            #             "name": post.author.role.name,
-            #         },
-            #     },
-            #
-            #     "subcategory": {
-            #         "id": post.subcategory.id,
-            #         "name": post.subcategory.name,
-            #         "required_role": post.subcategory.required_role,
-            #         "category": {
-            #             "id": post.subcategory.category.id,
-            #             "name": post.subcategory.category.name,
-            #             "required_role": post.subcategory.category.required_role,
-            #         },
-            #     },
-            #
-            #     "images": [
-            #         {
-            #             "id": image.id,
-            #             "path": image.path,
-            #         }
-            #         for image in post.images
-            #     ],
-            #}
 
         return {
             "success": True,
@@ -323,6 +326,7 @@ class ForumService:
             if not post.allow_comms or current_user.role.name != "Admin" and post.subcategory.required_role != current_user.role.name:
                 raise no_permission_exc
 
+        await redis.delete(f"post:{pid}:comments")
         msg = await ForumRepository.create_comment(comment, pid, db, current_user)
 
         if current_user.id != post["author"]["id"]:
@@ -421,12 +425,15 @@ class ForumService:
     async def delete_comment(cid, db, current_user):
         comment = await ForumRepository.get_comment_by_id(cid, db)
 
+        pid = await ForumRepository.get_post_by_cid(cid, db)
+
         if current_user.role.name != "Admin" and comment.author.id != current_user.id:
             raise HTTPException(
                 status_code=403,
                 detail="no permission"
             )
 
+        await redis.delete(f"post:{pid}:comments")
         delete = await ForumRepository.delete_comment(cid, current_user, db)
         return {"success": True}
 
