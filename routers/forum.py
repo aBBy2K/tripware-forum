@@ -67,7 +67,8 @@ async def post_page(request: Request, post_id: int, page: int = 1, db = Depends(
 
     total_comms = await ForumRepository.get_total_post_comms_count(post_id, db)
     # is_liked = await ForumRepository.get_user_post_like(post_id, current_user, db)
-    liked_ids = await ForumRepository.get_liked_cmnts_ids(post_id, current_user, db)
+    liked_ids = await ForumService.get_comms_likes_ids(post_id, db, current_user)
+    print(liked_ids)
     # likes_count = await ForumRepository.get_post_stats(post_id, db)
 
     await redis.incr(f"post:{post_id}:views")
@@ -155,8 +156,8 @@ async def like_unlike_ws(ws: WebSocket, post_id: int, current_user = Depends(get
 
 @router.get("/comment/{cid}/like")
 async def l_ul_comment(request: Request, cid: int, db = Depends(get_db), current_user = Depends(get_current_user)):
-    l_ul = await ForumService.like_unlike_comment(cid, db, current_user)
     post = await ForumRepository.get_pid_by_cid(cid, db)
+    l_ul = await ForumService.like_unlike_comment(post, cid, db, current_user)
 
     return RedirectResponse(
         url=f"/forum/post/{post}/#{cid}"
