@@ -1,12 +1,16 @@
 {% extends "bases/base_authed.html" %}
 {% block content %}
+
 <div class="posts-container">
     <div class="post-container">
         <div class="post-full">
             <div class="post-full-author">
                 <img src="{{ post.author.pfp }}" width="80" height="80">
-                <a href="/users/{{ post.author.id }}" style="font-size: 15px">{{ post.author.name }}</a>
+                <a href="/users/{{ post.author.id }}" style="font-size: 15px">
+                    {{ post.author.name }}
+                </a>
             </div>
+
             <div class="post-content">
                 <div class="post-title">
                     <a href="/users/{{ post.author_id }}">{{ post.title }}</a>
@@ -17,7 +21,10 @@
                 {% if post.images %}
                     <div class="post-images">
                         {% for img in post.images %}
-                            <img src="{{ img.path }}" style="max-width: 450px; border-radius: 5px; margin-top: 5px">
+                            <img
+                                src="{{ img.path }}"
+                                style="max-width: 450px; border-radius: 5px; margin-top: 5px"
+                            >
                         {% endfor %}
                     </div>
                 {% endif %}
@@ -39,7 +46,7 @@
 
             {% if current_user.role.name == "Admin" or post.author.id == current_user.id %}
                 <a href="/forum/post/{{ post.id }}/delete">Delete</a>
-            <a href="/forum/post/{{ post.id }}/edit">Edit</a>
+                <a href="/forum/post/{{ post.id }}/edit">Edit</a>
             {% endif %}
 
             <p>{{ post.views }} Views</p>
@@ -47,94 +54,193 @@
     </div>
 </div>
 
-{% if comments %}
-    {% for c in comments %}
-        <div class="posts-container" id="{{ c.id }}">
-            <div class="post-container">
-                <div class="post-full">
-                    <div class="post-full-author">
-                        <img src="{{ c.author.pfp }}" width="80" height="80">
-                        <a href="/users/{{ c.author.id }}" style="font-size: 15px">{{ c.author.name }}</a>
+
+<!-- COMMENTS -->
+
+<div id="comments-container">
+
+    {% if comments %}
+
+        {% for c in comments %}
+
+            <div class="posts-container" id="{{ c.id }}">
+                <div class="post-container">
+
+                    <div class="post-full">
+
+                        <div class="post-full-author">
+                            <img
+                                src="{{ c.author.pfp }}"
+                                width="80"
+                                height="80"
+                            >
+
+                            <a
+                                href="/users/{{ c.author.id }}"
+                                style="font-size: 15px"
+                            >
+                                {{ c.author.name }}
+                            </a>
+                        </div>
+
+                        <div class="post-content">
+                            {{ c.body }}
+                        </div>
+
                     </div>
 
-                    <div class="post-content">
-                        {{ c.body }}
+                    <div class="post-interaction">
+
+                        {% if c.id in liked %}
+                            <a
+                                href="/forum/comment/{{ c.id }}/like"
+                                style="text-decoration: underline"
+                            >
+                                Unlike
+                            </a>
+                        {% else %}
+                            <a href="/forum/comment/{{ c.id }}/like">
+                                Like
+                            </a>
+                        {% endif %}
+
+                        <a href="/forum/comment/{{ c.id }}/report">
+                            Report
+                        </a>
+
+                        {% if current_user.role.name == "Admin" or c.author.id == current_user.id %}
+                            <a href="/forum/comment/{{ c.id }}/delete">
+                                Delete
+                            </a>
+                        {% endif %}
+
                     </div>
-                </div>
 
-                <div class="post-interaction">
-                    {% if c.id in liked %}
-                        <a href="/forum/comment/{{ c.id }}/like" style="text-decoration: underline">Unlike</a>
-                    {% else %}
-                        <a href="/forum/comment/{{ c.id }}/like">Like</a>
-                    {% endif %}
-
-                    <a href="/forum/comment/{{ c.id }}/report">Report</a>
-
-                    {% if current_user.role.name == "Admin" or c.author.id == current_user.id %}
-                        <a href="/forum/comment/{{ c.id }}/delete">Delete</a>
-                    {% endif %}
                 </div>
             </div>
-        </div>
-    {% endfor %}
-{% else %}
-    <p style="text-align: center">There's no comments yet :(</p>
-{% endif %}
 
+        {% endfor %}
+
+    {% else %}
+
+        <p id="no-comments" style="text-align: center">
+            There's no comments yet :(
+        </p>
+
+    {% endif %}
+
+</div>
+
+
+<!-- COMMENT FORM -->
 
 {% if allow_comments %}
     <div class="posts-container">
         <form class="msg-chatbox-container" method="post">
-            <textarea id="comment" name="comment" placeholder="Leave your message here..."></textarea>
-            <button id="send-btn" type="submit" style="background: #1b1b1b; border: 1px solid #323232">
+
+            <textarea
+                id="comment"
+                name="comment"
+                placeholder="Leave your message here..."
+            ></textarea>
+
+            <button
+                id="send-btn"
+                type="submit"
+                style="background: #1b1b1b; border: 1px solid #323232"
+            >
                 Send
             </button>
+
         </form>
     </div>
 {% endif %}
 
+
+<!-- PAGINATION -->
+
 <div class="posts-container">
     <div class="lil-nav">
+
         {% if page == 1 %}
-            <a href="#"><strike>≤</strike></a>
+
+            <a href="#">
+                <strike>≤</strike>
+            </a>
+
             {% for p in range(pages) %}
+
                 {% if p + 1 == page %}
-                    <a href="?page={{ p + 1 }}">[{{ p + 1 }}]</a>
+                    <a href="?page={{ p + 1 }}">
+                        [{{ p + 1 }}]
+                    </a>
                 {% else %}
-                    <a href="?page={{ p + 1 }}">{{ p + 1 }}</a>
+                    <a href="?page={{ p + 1 }}">
+                        {{ p + 1 }}
+                    </a>
                 {% endif %}
+
             {% endfor %}
-            <a href="?page={{ pages }}">≥</a>
+
+            <a href="?page={{ pages }}">
+                ≥
+            </a>
+
         {% else %}
-            <a href="?page={{ page - 1 }}">≤</a>
+
+            <a href="?page={{ page - 1 }}">
+                ≤
+            </a>
+
             {% for p in range(pages) %}
+
                 {% if p + 1 == page %}
-                    <a href="?page={{ p + 1 }}">[{{ p + 1 }}]</a>
+                    <a href="?page={{ p + 1 }}">
+                        [{{ p + 1 }}]
+                    </a>
                 {% else %}
-                    <a href="?page={{ p + 1 }}">{{ p + 1 }}</a>
+                    <a href="?page={{ p + 1 }}">
+                        {{ p + 1 }}
+                    </a>
                 {% endif %}
+
             {% endfor %}
-        <a href="?page={{ pages }}">≥</a>
-    {% endif %}
-</div>
+
+            <a href="?page={{ pages }}">
+                ≥
+            </a>
+
+        {% endif %}
+
+    </div>
 </div>
 
+
 <script>
+
 const token = document.cookie
     .split("; ")
     .find(row => row.startsWith("token="))
     ?.split("=")[1];
 
+
+const wsProtocol = window.location.protocol === "https:"
+    ? "wss"
+    : "ws";
+
+
 const ws = new WebSocket(
-    `ws://${window.location.host}/forum/post/ws/{{ post.id }}?token=${token}`
+    `${wsProtocol}://${window.location.host}/forum/post/ws/{{ post.id }}?token=${token}`
 );
+
 
 ws.onopen = () => {
     console.log("Connected to post websocket");
 };
 
+
 ws.onmessage = (event) => {
+
     const data = JSON.parse(event.data);
 
     switch (data.type) {
@@ -143,13 +249,173 @@ ws.onmessage = (event) => {
         case "unlike":
 
             document.getElementById("likes-count").textContent = data.value;
+
+            break;
+
+
+        case "new_comment":
+
+            addComment(data.msg);
+
             break;
     }
 };
 
+
+function addComment(comment) {
+
+    const commentsContainer =
+        document.getElementById("comments-container");
+
+
+    // Если комментариев раньше не было,
+    // удаляем сообщение "There's no comments yet :("
+    const noComments =
+        document.getElementById("no-comments");
+
+    if (noComments) {
+        noComments.remove();
+    }
+
+
+    // Основной контейнер комментария
+    const commentContainer =
+        document.createElement("div");
+
+    commentContainer.className = "posts-container";
+
+    commentContainer.id = comment.id;
+
+
+    // post-container
+    const postContainer =
+        document.createElement("div");
+
+    postContainer.className = "post-container";
+
+
+    // post-full
+    const postFull =
+        document.createElement("div");
+
+    postFull.className = "post-full";
+
+
+    // Автор
+    const authorContainer =
+        document.createElement("div");
+
+    authorContainer.className = "post-full-author";
+
+
+    const avatar =
+        document.createElement("img");
+
+    avatar.src = comment.author.pfp;
+
+    avatar.width = 80;
+    avatar.height = 80;
+
+
+    const authorLink =
+        document.createElement("a");
+
+    authorLink.href =
+        `/users/${comment.author.id}`;
+
+    authorLink.style.fontSize = "15px";
+
+    authorLink.textContent =
+        comment.author.name;
+
+
+    authorContainer.appendChild(avatar);
+    authorContainer.appendChild(authorLink);
+
+
+    // Текст комментария
+    const content =
+        document.createElement("div");
+
+    content.className = "post-content";
+
+    content.textContent =
+        comment.body;
+
+
+    // Добавляем автора и текст
+    postFull.appendChild(authorContainer);
+    postFull.appendChild(content);
+
+
+    // post-interaction
+    const interaction =
+        document.createElement("div");
+
+    interaction.className = "post-interaction";
+
+
+    // Like
+    const likeLink =
+        document.createElement("a");
+
+    likeLink.href =
+        `/forum/comment/${comment.id}/like`;
+
+    likeLink.textContent =
+        "Like";
+
+
+    // Report
+    const reportLink =
+        document.createElement("a");
+
+    reportLink.href =
+        `/forum/comment/${comment.id}/report`;
+
+    reportLink.textContent =
+        "Report";
+
+
+    interaction.appendChild(likeLink);
+    interaction.appendChild(reportLink);
+
+
+    // Delete
+    if (
+        "{{ current_user.role.name }}" === "Admin" ||
+        comment.author.id === {{ current_user.id }}
+    ) {
+
+        const deleteLink =
+            document.createElement("a");
+
+        deleteLink.href =
+            `/forum/comment/${comment.id}/delete`;
+
+        deleteLink.textContent =
+            "Delete";
+
+        interaction.appendChild(deleteLink);
+    }
+
+
+    // Собираем комментарий
+    postContainer.appendChild(postFull);
+    postContainer.appendChild(interaction);
+
+    commentContainer.appendChild(postContainer);
+
+
+    // Добавляем новый комментарий в конец списка
+    commentsContainer.appendChild(commentContainer);
+}
+
+
 ws.onclose = () => {
     console.log("Disconnected");
 };
+
 </script>
 
 {% endblock %}

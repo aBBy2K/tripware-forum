@@ -54,8 +54,6 @@ async def search(request: Request, q: str = "", db = Depends(get_db), current_us
 
 @router.get("/post/{post_id}")
 async def post_page(request: Request, post_id: int, page: int = 1, db = Depends(get_db), current_user = Depends(get_current_user)):
-
-
     post = await ForumService.get_post(post_id, db, current_user)
 
     if not post:
@@ -80,7 +78,7 @@ async def post_page(request: Request, post_id: int, page: int = 1, db = Depends(
     page = max(page, 1)
 
     offset = (page - 1) * 5
-    comments = await ForumService.get_post_comms(post_id, db)
+    comments = await ForumService.get_post_comms(post_id, offset, page, db)
     is_liked = await redis.sismember(
         f"post:{post_id}:likes",
         current_user.id
@@ -144,7 +142,7 @@ async def like_unlike(request: Request, post_id: int, db = Depends(get_db), curr
     )
 
 @router.websocket("/post/ws/{post_id}")
-async def like_unlike_ws(ws: WebSocket, post_id: int, current_user = Depends(get_current_user_ws)):
+async def post_ws(ws: WebSocket, post_id: int, current_user = Depends(get_current_user_ws)):
     await ws.accept()
     await manager.post_connect(post_id, ws)
 

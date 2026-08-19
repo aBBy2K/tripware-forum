@@ -145,8 +145,8 @@ class ForumService:
 
 
     @staticmethod
-    async def get_post_comms(pid, db):
-        cached = await redis.get(f"post:{pid}:comments")
+    async def get_post_comms(pid, offset, page, db):
+        cached = await redis.get(f"post:{pid}:comments:{page}")
 
         if cached:
             print("[+] comments found in cache")
@@ -154,7 +154,7 @@ class ForumService:
             return comments
 
         print("[-] comments not found in cache. caching...")
-        comments_db = await ForumRepository.get_post_comments(pid, db)
+        comments_db = await ForumRepository.get_post_comments_pagination(pid, db, offset)
 
         comments = [
             {
@@ -179,7 +179,7 @@ class ForumService:
         ]
 
         await redis.set(
-            f"post:{pid}:comments",
+            f"post:{pid}:comments:{page}",
             json.dumps(comments),
             ex=300
         )
@@ -352,8 +352,12 @@ class ForumService:
             if not post.allow_comms or current_user.role.name != "Admin" and post.subcategory.required_role != current_user.role.name:
                 raise no_permission_exc
 
-        await redis.delete(f"post:{pid}:comments")
         msg = await ForumRepository.create_comment(comment, pid, db, current_user)
+
+        async for key in redis.scan_iter(
+                match=f"post:{pid}:comments:*"
+        ):
+            await redis.delete(key)
 
         if current_user.id != post["author"]["id"]:
             await NotificationsService.add_notif(
@@ -364,6 +368,22 @@ class ForumService:
                 user_id=post["author"]["id"],
                 db=db
             )
+
+        await manager.post_updates(
+            post_id=pid,
+            data={
+                "type": "new_comment",
+                "msg": {
+                    "id": msg.id,
+                    "body": msg.body,
+                    "author": {
+                        "id": msg.author.id,
+                        "name": msg.author.name,
+                        "pfp": msg.author.pfp
+                    }
+                }
+            }
+        )
 
         return {
             "success": True
@@ -467,7 +487,10 @@ class ForumService:
                 detail="no permission"
             )
 
-        await redis.delete(f"post:{pid}:comments")
+        async for key in redis.scan_iter(
+                match=f"post:{pid}:comments:*"
+        ):
+            await redis.delete(key)
         delete = await ForumRepository.delete_comment(cid, current_user, db)
         return {"success": True}
 
