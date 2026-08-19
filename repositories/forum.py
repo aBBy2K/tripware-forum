@@ -39,7 +39,14 @@ class ForumRepository:
         db.add(n_comment)
         await db.commit()
         await db.refresh(n_comment)
-        return n_comment
+
+        result = await db.execute(
+            select(PostComments)
+            .options(selectinload(PostComments.author))
+            .where(PostComments.id == n_comment.id)
+        )
+
+        return result.scalar_one()
 
     @classmethod
     async def get_post_comments(cls, pid, db):
@@ -49,7 +56,7 @@ class ForumRepository:
 
     @classmethod
     async def get_post_comments_pagination(cls, pid, db, offset):
-        stmt = select(PostComments).where(PostComments.post_id == pid).options(selectinload(PostComments.author)).offset(offset).limit(5)
+        stmt = select(PostComments).where(PostComments.post_id == pid).options(selectinload(PostComments.author).selectinload(Users.role)).offset(offset).limit(5)
         comments = await db.scalars(stmt)
         return comments.all()
 
