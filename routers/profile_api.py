@@ -4,11 +4,12 @@ from fastapi.requests import Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 from pydantic import EmailStr
+from starlette.websockets import WebSocket
 
 from database.database import get_db
 from repositories.notifications import NotificationsRepository
 from repositories.users import UsersRepository
-from security.auth import get_current_user
+from security.auth import get_current_user, get_current_user_ws
 from services.auth_service import AuthService
 from services.notifications import NotificationsService
 from services.profile_service import ProfileService
@@ -36,6 +37,10 @@ async def notifications_page(request: Request, current_user = Depends(get_curren
         name="/profile/notifs.html",
         context={"notifs": notifications}
     )
+
+@router.websocket("/notifications/ws")
+async def notifications_ws(websocket: WebSocket, current_user = Depends(get_current_user_ws)):
+    await NotificationsService.ws(websocket, current_user)
 
 @router.get("/notifications/{nid}/read")
 async def notifications_page(request: Request, nid: int, current_user = Depends(get_current_user), db = Depends(get_db)):
