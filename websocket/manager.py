@@ -17,6 +17,7 @@ class ConnectionManager:
         self.page_connections: dict[int, set[WebSocket]] = {}
         self.cb_connections: set[WebSocket] = set()
         self.post_connections: dict[int, set[WebSocket]] = {}
+        self.dm_connections: dict[int, set[WebSocket]] = {}
 
     async def connect(self, user_id: int, ws: WebSocket):
         if user_id not in self.connections:
@@ -90,11 +91,36 @@ class ConnectionManager:
             if not self.post_connections[post_id]:
                 del self.post_connections[post_id]
 
+    async def dm_connect(self, user_id: int, ws: WebSocket):
+        if user_id not in self.dm_connections:
+            self.dm_connections[user_id] = set()
+
+        self.dm_connections[user_id].add(ws)
+
+        print(f"[ websocket ]: info: connected to dm ws new user with id {user_id}")
+
+
+    async def dm_disconnect(self, user_id: int, ws: WebSocket):
+        if user_id in self.dm_connections:
+            self.dm_connections[user_id].discard(ws)
+
+            if not self.dm_connections[user_id]:
+                del self.dm_connections[user_id]
+
+        print(f"[ websocket ]: info: disconnected from dm ws new user with id {user_id}")
+
     async def send_dm(self, sender_id: int, recipient_id: int, msg: str):
-        if recipient_id not in self.connections:
+        print(
+            "SEND_DM:",
+            recipient_id,
+            "connections:",
+            self.dm_connections
+        )
+
+        if recipient_id not in self.dm_connections:
             return
 
-        for socket in list(self.connections[recipient_id]):
+        for socket in list(self.dm_connections[recipient_id]):
             try:
                 print("SENDING DM:", {
                     "type": "dm_msg",
@@ -109,7 +135,7 @@ class ConnectionManager:
                     "msg": msg
                 })
             except Exception as e:
-                await self.disconnect(user_id=recipient_id, ws=socket)
+                await self.dm_disconnect(user_id=recipient_id, ws=socket)
                 print(f"DB ERROR: {type(e).__name__}: {e}")
                 import traceback
                 traceback.print_exc()

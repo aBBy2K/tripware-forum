@@ -3,10 +3,10 @@ import asyncio
 from fastapi import FastAPI, Depends, WebSocket
 from fastapi.requests import Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
 from contextlib import asynccontextmanager
 
 from core.redis_conf import redis
+from core.redis.pubsub import PubSub
 from repositories.admin_forum import AdminForumRepository
 from repositories.chatbox import CBMSGSRepository
 from security.auth import get_current_user, get_current_user_ws
@@ -14,7 +14,6 @@ from database.database import get_db, SessionLocal, engine
 from services.chatbox_service import CBService
 from services.forum import ForumService
 from templates.template_config import template
-from templates.filters import last_seen
 
 from routers.auth_api import router as auth
 from routers.profile_api import router as profile
@@ -36,16 +35,41 @@ async def sync_views_loop():
             await asyncio.sleep(60)
 
 @asynccontextmanager
-async def lifespan(app: FastAPI, db = Depends(get_db)):
+async def lifespan(app: FastAPI):
+
+    print("LIFESPAN START")
+
     await redis.ping()
     print("Redis connected")
 
-    task = asyncio.create_task(sync_views_loop())
+    pubsub = PubSub()
 
-    yield
+    sync_task = asyncio.create_task(
+        sync_views_loop()
+    )
 
-    task.cancel()
-    await redis.close()
+    listener_task = asyncio.create_task(
+        pubsub.listen()
+    )
+
+    try:
+        yield
+
+    finally:
+        print("LIFESPAN SHUTDOWN")
+
+        sync_task.cancel()
+        listener_task.cancel()
+
+        await asyncio.gather(
+            sync_task,
+            listener_task,
+            return_exceptions=True
+        )
+
+        await redis.close()
+
+        print("LIFESPAN FINISHED")
 
 app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")

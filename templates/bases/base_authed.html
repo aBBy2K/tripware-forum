@@ -42,7 +42,7 @@
     {% endblock %}
 
     <script>
-    const notifSocket = new WebSocket(`ws://${window.location.host}/dms/ws`);
+    const notifSocket = new WebSocket(`ws://${window.location.host}/profile/notifications/ws`);
     let unreadCount = 0;
 
     function showNotification(head, body) {

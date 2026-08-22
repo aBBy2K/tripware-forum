@@ -5,49 +5,67 @@ from websocket.manager import manager
 
 
 class PubSub:
+
     def __init__(self):
         self.redis = redis
         self.manager = manager
-
+        self.pubsub = None
 
     async def listen(self):
-        pubsub = self.redis.pubsub()
+        self.pubsub = self.redis.pubsub()
 
-        await pubsub.psubscribe(
+        await self.pubsub.psubscribe(
             "chat:user:*",
             "cb:user",
             "notification:user:*",
             "post:*"
         )
 
-        async for msg in pubsub.listen():
-            if msg["type"] != "pmessage":
-                continue
+        print("PUBSUB SUBSCRIBED")
 
-            data = json.loads(msg["data"])
+        try:
+            async for msg in self.pubsub.listen():
 
-            if data["type"] == "dm_msg":
-                await self.manager.send_dm(
-                    sender_id=data["sender_id"],
-                    recipient_id=data["recipient_id"],
-                    msg=data["msg"]
-                )
+                if msg["type"] != "pmessage":
+                    continue
 
-            if data["type"] == "cbm":
-                await self.manager.send_cbm(
-                    sender_id=data["sender_id"],
-                    sender_name=data["sender_name"],
-                    msg=data["msg"]
-                )
+                try:
+                    data = json.loads(msg["data"])
 
-            if data["type"] == "notification":
-                await self.manager.notify(
-                    user_id=data["user_id"],
-                    notif=data["notif"]
-                )
+                    if data["type"] == "dm_msg":
+                        await self.manager.send_dm(
+                            sender_id=data["sender_id"],
+                            recipient_id=data["recipient_id"],
+                            msg=data["msg"]
+                        )
 
-            if data["type"] == "new_comment" or data["type"] == "like" or data["type"] == "unlike":
-                await self.manager.post_updates(
-                    post_id=data["post_id"],
-                    data=data["data"]
-                )
+                    elif data["type"] == "cbm":
+                        await self.manager.send_cbm(
+                            sender_id=data["sender_id"],
+                            sender_name=data["sender_name"],
+                            msg=data["msg"]
+                        )
+
+                    elif data["type"] == "notification":
+                        await self.manager.notify(
+                            user_id=data["user_id"],
+                            notif=data["notif"]
+                        )
+
+                    elif data["type"] in (
+                        "new_comment",
+                        "like",
+                        "unlike"
+                    ):
+                        await self.manager.post_updates(
+                            post_id=data["post_id"],
+                            data=data["data"]
+                        )
+
+                except Exception as e:
+                    print("PUBSUB EVENT ERROR:", repr(e))
+
+        finally:
+            if self.pubsub:
+                await self.pubsub.close()
+                print("PUBSUB CLOSED")

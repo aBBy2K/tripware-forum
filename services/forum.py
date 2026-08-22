@@ -29,7 +29,7 @@ class ForumService:
         if cache:
             post = json.loads(cache)
 
-            if not redis.exists(f"post:{pid}:likes:initialized"):
+            if not await redis.exists(f"post:{pid}:likes:initialized"):
                 liked_uids = await ForumRepository.get_post_likes(pid, db)
 
                 if liked_uids:
@@ -369,21 +369,41 @@ class ForumService:
                 db=db
             )
 
-        await manager.post_updates(
-            post_id=pid,
-            data={
+        await redis.publish(
+            f"post:{pid}",
+            json.dumps({
+                "post_id": pid,
                 "type": "new_comment",
-                "msg": {
-                    "id": msg.id,
-                    "body": msg.body,
-                    "author": {
-                        "id": msg.author.id,
-                        "name": msg.author.name,
-                        "pfp": msg.author.pfp
+                "data": {
+                    "type": "new_comment",
+                    "msg": {
+                        "id": msg.id,
+                        "body": msg.body,
+                        "author": {
+                            "id": msg.author.id,
+                            "name": msg.author.name,
+                            "pfp": msg.author.pfp
+                        }
                     }
                 }
-            }
+            })
         )
+
+        # await manager.post_updates(
+        #     post_id=pid,
+        #     data={
+        #         "type": "new_comment",
+        #         "msg": {
+        #             "id": msg.id,
+        #             "body": msg.body,
+        #             "author": {
+        #                 "id": msg.author.id,
+        #                 "name": msg.author.name,
+        #                 "pfp": msg.author.pfp
+        #             }
+        #         }
+        #     }
+        # )
 
         return {
             "success": True
@@ -400,22 +420,49 @@ class ForumService:
                 f"post:{pid}:likes",
                 current_user.id
             )
-            await manager.post_updates(pid, data={
-                "post_id": pid,
-                "type": "unlike",
-                "value": stats - 1
-            })
+
+            await redis.publish(
+                f"post:{pid}",
+                json.dumps({
+                    "post_id": pid,
+                    "type": "unlike",
+                    "data": {
+                        "post_id": pid,
+                        "type": "unlike",
+                        "value": stats - 1
+                    }
+                })
+            )
+            # await manager.post_updates(pid, data={
+            #     "post_id": pid,
+            #     "type": "unlike",
+            #     "value": stats - 1
+            # })
         else:
             unlike = await ForumRepository.like(pid, db, current_user)
             await redis.sadd(
                 f"post:{pid}:likes",
                 current_user.id
             )
-            await manager.post_updates(pid, data={
-                "post_id": pid,
-                "type": "like",
-                "value": stats + 1
-            })
+
+            await redis.publish(
+                f"post:{pid}",
+                json.dumps({
+                    "post_id": pid,
+                    "type": "like",
+                    "data": {
+                        "post_id": pid,
+                        "type": "like",
+                        "value": stats + 1
+                    }
+                })
+            )
+
+            # await manager.post_updates(pid, data={
+            #     "post_id": pid,
+            #     "type": "like",
+            #     "value": stats + 1
+            # })
 
         return {
             "success": True

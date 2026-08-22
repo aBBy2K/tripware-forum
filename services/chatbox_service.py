@@ -1,5 +1,8 @@
+import json
+
 from fastapi import WebSocket, WebSocketDisconnect
 
+from core.redis_conf import redis
 from database.database import SessionLocal, engine
 from repositories.chatbox import CBMSGSRepository
 from websocket.manager import manager
@@ -22,7 +25,17 @@ class CBService:
                 if message is None:
                     continue
 
-                await manager.send_cbm(current_user.id, current_user.name, msg)
+                await redis.publish(
+                    f"cb:user",
+                    json.dumps({
+                        "type": "cbm",
+                        "sender_id": current_user.id,
+                        "sender_name": current_user.name,
+                        "msg": msg
+                    })
+                )
+
+                # await manager.send_cbm(current_user.id, current_user.name, msg)
         except WebSocketDisconnect:
             pass
         finally:

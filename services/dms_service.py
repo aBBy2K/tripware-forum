@@ -1,5 +1,8 @@
+import json
+
 from fastapi import WebSocket, WebSocketException, WebSocketDisconnect, Depends
 
+from core.redis_conf import redis
 from database.database import get_db, SessionLocal, engine
 from models.messages import Messages
 from repositories.messages import MsgRepository
@@ -10,7 +13,7 @@ class DMsServices:
     @staticmethod
     async def ws(websocket: WebSocket, current_user):
         await websocket.accept()
-        await manager.connect(current_user.id, websocket)
+        await manager.dm_connect(current_user.id, websocket)
 
         try:
             while True:
@@ -25,11 +28,22 @@ class DMsServices:
                 if message is None:
                     continue
 
-                await manager.send_dm(
-                    current_user.id,
-                    recipient_id,
-                    msg
+                result = await redis.publish(
+                    f"chat:user:{recipient_id}",
+                    json.dumps({
+                        "type": "dm_msg",
+                        "sender_id": current_user.id,
+                        "recipient_id": recipient_id,
+                        "msg": msg
+                    })
                 )
+
+                print("PUBLISHED", result)
+                # await manager.send_dm(
+                #     current_user.id,
+                #     recipient_id,
+                #     msg
+                # )
         except WebSocketDisconnect:
             pass
         except Exception as e:
@@ -42,5 +56,5 @@ class DMsServices:
                 current_user.id,
                 engine.pool.status()
             )
-            await manager.disconnect(current_user.id, websocket)
+            await manager.dm_disconnect(current_user.id, websocket)
 
