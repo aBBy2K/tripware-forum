@@ -107,3 +107,12 @@ async def index(request: Request, current_user = Depends(get_current_user), db =
 @app.websocket("/ws")
 async def ws(websocket: WebSocket, current_user = Depends(get_current_user_ws)):
     message = await CBService.ws(websocket, current_user)
+
+@app.get("/debug/tasks")
+async def debug_tasks():
+    result = []
+    for t in asyncio.all_tasks():
+        stack = t.get_stack()
+        frames = [f"{f.f_code.co_filename}:{f.f_lineno} in {f.f_code.co_name}" for f in stack]
+        result.append({"name": t.get_name(), "frames": frames})
+    return result

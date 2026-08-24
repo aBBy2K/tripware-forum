@@ -1,8 +1,8 @@
 from datetime import datetime
-
 from fastapi import WebSocket, WebSocketDisconnect
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
+import asyncio
 
 from core.redis_conf import redis
 from database.database import SessionLocal
@@ -18,6 +18,14 @@ class ConnectionManager:
         self.cb_connections: set[WebSocket] = set()
         self.post_connections: dict[int, set[WebSocket]] = {}
         self.dm_connections: dict[int, set[WebSocket]] = {}
+
+    async def _safe_send(self, socket: WebSocket, data: dict) -> bool:
+        try:
+            await asyncio.wait_for(socket.send_json(data), timeout=5)
+            return True
+        except Exception as e:
+            print(f"send failed: {e}")
+            return False
 
     async def connect(self, user_id: int, ws: WebSocket):
         if user_id not in self.connections:
@@ -190,18 +198,18 @@ class ConnectionManager:
                     await socket.send_json(data)
                 except Exception as e:
                     print(f"error: {e}")
-                    await self.disconnect(user_id, socket)
+                    await self.user_page_disconnect(user_id, socket)
 
     async def broadcast_online_users(self, value: int):
-        for sockets in self.connections.values():
+        for user_id, sockets in list(self.connections.items()):
             for socket in list(sockets):
-                try:
-                    await socket.send_json({
-                        "type": "current_online",
-                        "value": value
-                    })
-                except Exception as e:
-                    print(f"error: {e}")
+                ok = await self._safe_send(socket, {
+                    "type": "current_online",
+                    "value": value
+                })
+
+                if not ok:
+                    await self.disconnect(user_id, socket)
 
 
 

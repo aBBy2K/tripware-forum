@@ -1,4 +1,5 @@
 import asyncio
+import os
 from typing import Annotated
 from fastapi import Depends, APIRouter, Form, HTTPException, UploadFile, File
 from fastapi.requests import Request
@@ -100,10 +101,19 @@ async def flush_redis_cache(request: Request, current_user = Depends(get_current
     print("cache is flushed")
     return {"success": True, "message": "flushed"}
 
+
 @router.get("/pool")
-async def pool(request: Request, current_user = Depends(get_current_user), admin = Depends(require_admin)):
-    print(engine.pool.status())
-    return {"see console"}
+async def pool():
+    print(
+        f"POOL REQUEST | PID={os.getpid()} | "
+        f"{engine.pool.status()}",
+        flush=True
+    )
+
+    return {
+        "pid": os.getpid(),
+        "pool": engine.pool.status()
+    }
 
 @router.get("/pool_test")
 async def pool():
