@@ -45,6 +45,12 @@
     const notifSocket = new WebSocket(`ws://${window.location.host}/profile/notifications/ws`);
     let unreadCount = 0;
 
+    window.addEventListener("pagehide", () => {
+    if (notifSocket.readyState === WebSocket.OPEN || notifSocket.readyState === WebSocket.CONNECTING) {
+        notifSocket.close(1000, "page navigation");
+        }
+    });
+
     function showNotification(head, body) {
         const notification = document.createElement("div");
 
