@@ -48,7 +48,7 @@ class PubSub:
 
                     elif data["type"] == "notification":
                         await self.manager.notify(
-                            user_id=data["user_id"],
+                            user_id=data["notif"]["user_id"],
                             notif=data["notif"]
                         )
 

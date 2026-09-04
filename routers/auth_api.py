@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 from pydantic import EmailStr
 from starlette.background import BackgroundTasks
+from core.redis.ratelimit import rate_limit
 
 from database.database import get_db
 from services.auth_service import AuthService
@@ -21,6 +22,9 @@ def login_page(request: Request):
 
 @router.post("/login")
 async def login(request: Request, login: str = Form(), password: str = Form(), db = Depends(get_db)):
+    ip = request.client.host
+    await rate_limit(f"login:{ip}", 5)
+
     result = await AuthService.login(login=login, password=password, db=db)
 
     if not result["success"]:

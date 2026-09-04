@@ -14,6 +14,7 @@ from database.database import get_db, SessionLocal, engine
 from services.chatbox_service import CBService
 from services.forum import ForumService
 from templates.template_config import template
+from templates.filters import last_seen
 
 from routers.auth_api import router as auth
 from routers.profile_api import router as profile
