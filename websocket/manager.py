@@ -168,7 +168,7 @@ class ConnectionManager:
 
         for socket in list(self.connections[user_id]):
             try:
-                await socket.send_json({
+                await self._safe_send(socket, {
                     "type": "notification",
                     **notif
                 })

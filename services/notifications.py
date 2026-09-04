@@ -18,7 +18,7 @@ class NotificationsService:
 
         try:
             while True:
-                message = await ws.receive()
+                message = await ws.receive_json()
 
                 if message["type"] == "websocket.disconnect":
                     break
