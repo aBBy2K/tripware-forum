@@ -31,7 +31,7 @@
 </div>
 
 <script>
-const socket = new WebSocket(`ws://${window.location.host}/dms/ws`);
+const socket = new WebSocket(`wss://${window.location.host}/dms/ws`);
 
 const sendBtn = document.getElementById("send-btn");
 const msgInput = document.getElementById("input-msg");

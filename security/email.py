@@ -20,9 +20,7 @@ async def verification_email(email: str, token: str):
         body=f"""
         Verify your account:
 
-        http://172.25.169.95:8000/auth/verify/{token}    
-        
-        http://10.0.1.1:8000/auth/verify/{token}    
+        https://tripware.ru/auth/verify/{token}    
         """,
         subtype="plain"
     )
@@ -33,14 +31,12 @@ async def verification_email(email: str, token: str):
 
 async def password_recovery_email(email: str, token: str):
     message = MessageSchema(
-        subject="tripware.club / verification mail",
+        subject="tripware.club / password reset mail",
         recipients=[email],
         body=f"""
             SOMEONE REQUESTED PASSWORD RECOVERY ON YOUR EMAIL
 
-            http://172.25.169.95:8000/auth/forgor/verify/{token}    
-
-            http://10.0.1.1:8000/auth/forgor/verify/{token}    
+            https://tripware.ru/auth/forgor/verify/{token}    
             
             IF IT WASN'T YOU, THEN IT MEANS THAT SOMEONE IS TRYING TO HACK YOUR TRIPWARE ACCOUNT. PLEASE CONTACT ADMINISTRATION
             
