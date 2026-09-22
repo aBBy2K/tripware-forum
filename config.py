@@ -15,3 +15,5 @@ TEST_DB_URL = os.getenv("TEST_DB_URL")
 
 MAIL_USERNAME = os.getenv("MAIL_USERNAME")
 MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")

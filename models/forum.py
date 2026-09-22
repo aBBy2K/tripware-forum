@@ -35,11 +35,14 @@ class Posts(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime)
     allow_comms: Mapped[bool] = mapped_column(Boolean, server_default="1")
     is_pinned: Mapped[bool] = mapped_column(Boolean, server_default="0")
+    visibility_option: Mapped[int] = mapped_column(Integer, ForeignKey("p_visibility_options.id"), default=3)
+    summary: Mapped[str] = mapped_column(Text, nullable=True)
 
     author: Mapped["Users"] = relationship(foreign_keys=[author_id])
     subcategory: Mapped["SubCategories"] = relationship(foreign_keys=[subcategory_id])
     images: Mapped[List["PostImages"]] = relationship(back_populates="post")
     stats: Mapped[List["PostLikes"]] = relationship(back_populates="post")
+    visibility: Mapped["PostsVisOptions"] = relationship(foreign_keys=[visibility_option])
 
 
 class PostImages(Base):
@@ -91,3 +94,9 @@ class VisibilityOptions(Base):
     __tablename__ = "f_visibility_options"
 
     name: Mapped[str] = mapped_column(String(32))
+
+class PostsVisOptions(Base):
+    __tablename__ = "p_visibility_options"
+
+    name: Mapped[str] = mapped_column(String(32))
+    description: Mapped[str] = mapped_column(Text)

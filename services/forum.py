@@ -1,7 +1,8 @@
 import json
 import secrets
+import httpx
 
-from fastapi import HTTPException
+from fastapi import HTTPException, BackgroundTasks, Depends
 from pydantic import ValidationError
 from starlette.concurrency import run_in_threadpool
 from watchfiles import awatch
@@ -12,6 +13,8 @@ from repositories.forum import ForumRepository
 from schemas.posts import PostsUpdate, PostsCreate
 from services.notifications import NotificationsService
 from websocket.manager import manager
+from services.moderation import ModerationService
+from dependencies.dependencies import get_moderation_service
 
 allowed_content_type = [
     "image/jpeg",
@@ -20,6 +23,36 @@ allowed_content_type = [
     "image/webp",
     "image/avif"
 ]
+
+async def moderation_bg(pid, db, moderation_service: ModerationService):
+    post = await AdminForumRepository.get_post_by_id(pid, db)
+
+    if not post:
+        return
+
+    moderation = await moderation_service.check_content(f"{post.title}: {post.body}")
+
+    if moderation["failure"]:
+        return
+
+    if moderation["verdict"]["allowed"]:
+        post.visibility_option = 1
+
+        summary = await moderation_service.get_summary(f"{post.title}: {post.body}")
+
+        if summary["failure"]:
+            post.summary = "Failed to generate post summary"
+        else:
+            if summary["summary"]["success"]:
+                post.summary = summary["summary"]["summary"]
+            else:
+                post.summary = None
+
+    if not moderation["verdict"]["allowed"]:
+        post.visibility_option = 2
+
+    await redis.delete(f"post:{pid}")
+    await db.commit()
 
 class ForumService:
     @staticmethod
@@ -93,6 +126,8 @@ class ForumService:
                 "views": post.views,
                 "allow_comms": post.allow_comms,
                 "is_pinned": post.is_pinned,
+                "visibility_option": post.visibility_option,
+                "summary": post.summary,
 
                 "author": {
                     "id": post.author.id,
@@ -123,6 +158,12 @@ class ForumService:
                     }
                     for image in post.images
                 ],
+
+                "visibility": {
+                    "id": post.visibility.id,
+                    "name": post.visibility.name,
+                    "description": post.visibility.description
+                }
             }
 
             await redis.set(
@@ -289,7 +330,7 @@ class ForumService:
             await redis.delete(key)
 
     @staticmethod
-    async def create(title, body, imgs, subcat_id, current_user, db):
+    async def create(title, body, imgs, subcat_id, current_user, db, bgtask: BackgroundTasks, moderation_service: ModerationService = Depends(get_moderation_service)):
         try:
             p = PostsCreate(title=title, body=body)
         except ValidationError:
@@ -325,8 +366,11 @@ class ForumService:
 
                 add_img = await ForumRepository.add_post_img(f"/{fullpath}", post.id, db)
 
+        bgtask.add_task(moderation_bg, post.id, db, moderation_service)
+
         return {
-            "success": True
+            "success": True,
+            "pid": post.id
         }
 
     @staticmethod

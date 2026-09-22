@@ -1,6 +1,18 @@
 {% extends "bases/base_authed.html" %}
 {% block content %}
 
+{% if e %}
+    <div class="posts-container" style="flex-direction: row; gap: 10px;">
+        <img src="/static/assets/locked.png" width="30px" height="30px"><p>{{ e }}</p>
+    </div>
+{% endif %}
+
+{% if post.summary %}
+    <div class="posts-container">
+        <p>{{ post.summary }}</p>
+    </div>
+{% endif %}
+
 <div class="posts-container">
     <div class="post-container">
         <div class="post-full">
