@@ -1,0 +1,21 @@
+{% extends "bases/base_authed.html" %}
+{% block content %}
+
+{% if posts %}
+    {% for p in posts %}
+        <div class="profile-container">
+            <h2>{{ p.title }}</h2>
+            <p>{{ p.body }}</p>
+            {% for pic in p.images %}
+                <img src="{{ pic.path }}" style="max-width: 450px; max-height: 450px;">
+            {% endfor %}
+            <div style="display: flex; flex-direction: row; gap: 15px;">
+                <a href="/forum/post/{{ p.id }}/delete">Delete post</a>
+                <a href="/admin/ban?uid={{ p.author.id }}">Ban content creator</a>
+                <a href="/admin/allowpost/{{ p.id }}">Allow post</a>
+            </div>
+        </div>
+    {% endfor %}
+{% endif %}
+
+{% endblock %}

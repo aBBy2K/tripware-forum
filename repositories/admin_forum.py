@@ -46,7 +46,7 @@ class AdminForumRepository:
 
     @classmethod
     async def get_subcat_posts(cls, scid, offset, db):
-        stmt = select(Posts).where(Posts.subcategory_id == scid).offset(offset).limit(10).order_by(Posts.created_at.desc()).options(selectinload(Posts.author))
+        stmt = select(Posts).where(and_(Posts.subcategory_id == scid, Posts.visibility_option == 1)).offset(offset).limit(10).order_by(Posts.created_at.desc()).options(selectinload(Posts.author))
         posts = await db.scalars(stmt)
         return posts.all()
 
@@ -60,8 +60,7 @@ class AdminForumRepository:
 
     @classmethod
     async def get_post_by_id(cls, pid, db):
-        stmt = select(Posts).where(Posts.id == pid).options(selectinload(Posts.author).selectinload(Users.role),selectinload(Posts.subcategory).selectinload(SubCategories.category),selectinload(Posts.images),
-    )
+        stmt = select(Posts).where(Posts.id == pid).options(selectinload(Posts.author).selectinload(Users.role), selectinload(Posts.subcategory).selectinload(SubCategories.category), selectinload(Posts.images), selectinload(Posts.visibility))
         post = await db.scalars(stmt)
         return post.one_or_none()
 
@@ -93,3 +92,9 @@ class AdminForumRepository:
         delete_r = await db.execute(stmt)
         await db.commit()
         return delete_r
+
+    @classmethod
+    async def get_all_hidden_posts(cls, db):
+        stmt = select(Posts).where(or_(Posts.visibility_option == 2, Posts.visibility_option == 3)).options(selectinload(Posts.author).selectinload(Users.role), selectinload(Posts.subcategory).selectinload(SubCategories.category), selectinload(Posts.images), selectinload(Posts.visibility))
+        posts = await db.scalars(stmt)
+        return posts.all()

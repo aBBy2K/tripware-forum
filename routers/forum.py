@@ -1,7 +1,7 @@
 from typing import Annotated, Optional
 
 import math
-from fastapi import Depends, APIRouter, Form, HTTPException, UploadFile, File
+from fastapi import Depends, APIRouter, Form, HTTPException, UploadFile, File, BackgroundTasks
 from fastapi.requests import Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
@@ -16,9 +16,11 @@ from security.auth import get_current_user, get_current_user_ws
 from security.roles_access import can_post
 from services.auth_service import AuthService
 from services.forum import ForumService
+from services.moderation import ModerationService
 from services.profile_service import ProfileService
 from templates.template_config import template
 from websocket.manager import manager
+from dependencies.dependencies import get_moderation_service
 
 router = APIRouter(prefix="/forum", tags=["Forum"])
 
@@ -55,6 +57,7 @@ async def search(request: Request, q: str = "", db = Depends(get_db), current_us
 @router.get("/post/{post_id}")
 async def post_page(request: Request, post_id: int, page: int = 1, db = Depends(get_db), current_user = Depends(get_current_user)):
     post = await ForumService.get_post(post_id, db, current_user)
+    e = None
 
     if not post:
         raise HTTPException(
@@ -62,12 +65,17 @@ async def post_page(request: Request, post_id: int, page: int = 1, db = Depends(
             detail="post not found"
         )
 
+    if post["post"]["visibility_option"] != 1:
+        if post["post"]["author_id"] != current_user.id:
+            raise HTTPException(
+                status_code=404,
+                detail="post not found"
+            )
+        else:
+            e = post["post"]["visibility"]["description"]
 
     total_comms = await ForumRepository.get_total_post_comms_count(post_id, db)
-    # is_liked = await ForumRepository.get_user_post_like(post_id, current_user, db)
     liked_ids = await ForumService.get_comms_likes_ids(post_id, db, current_user)
-    print(liked_ids)
-    # likes_count = await ForumRepository.get_post_stats(post_id, db)
 
     await redis.incr(f"post:{post_id}:views")
     likes_count = await redis.scard(f"post:{post_id}:likes")
@@ -87,7 +95,7 @@ async def post_page(request: Request, post_id: int, page: int = 1, db = Depends(
     return template.TemplateResponse(
         request=request,
         name="forum/post.html",
-        context={"post": post["post"], "allow_comments": post["allow_comments"], "page": page, "comments": comments, "total_comms": total_comms, "pages": total_pages, "is_liked": is_liked, "liked": liked_ids, "current_user": current_user, "likes": likes_count}
+        context={"post": post["post"], "allow_comments": post["allow_comments"], "page": page, "comments": comments, "total_comms": total_comms, "pages": total_pages, "is_liked": is_liked, "liked": liked_ids, "current_user": current_user, "likes": likes_count, "e": e}
     )
 
 @router.get("/post/{post_id}/report")
@@ -222,8 +230,8 @@ async def new_post_page(request: Request, subcat_id: int, db = Depends(get_db), 
     )
 
 @router.post("/{subcat_id}/new")
-async def new_post(request: Request, subcat_id: int, db = Depends(get_db), current_user = Depends(get_current_user), post_title: str = Form(), post_body: str = Form(), imgs: list[UploadFile] = File(None), role = Depends(required_role)):
-    post = await ForumService.create(title=post_title, body=post_body, imgs=imgs, subcat_id=subcat_id, current_user=current_user, db=db)
+async def new_post(request: Request, bgtask: BackgroundTasks, subcat_id: int, db = Depends(get_db), current_user = Depends(get_current_user), post_title: str = Form(), post_body: str = Form(), imgs: list[UploadFile] = File(None), role = Depends(required_role), moderation_service: ModerationService = Depends(get_moderation_service)):
+    post = await ForumService.create(title=post_title, body=post_body, imgs=imgs, subcat_id=subcat_id, current_user=current_user, db=db, bgtask=bgtask, moderation_service=moderation_service)
 
     if not post["success"]:
         return template.TemplateResponse(
@@ -232,10 +240,10 @@ async def new_post(request: Request, subcat_id: int, db = Depends(get_db), curre
             context={"e": str(post["message"])}
         )
 
-    return template.TemplateResponse(
-        request=request,
-        name="forum/newpost.html",
-        context={"e": "Post successfully created"}
+
+    return RedirectResponse(
+        status_code=303,
+        url=f"/forum/post/{post["pid"]}"
     )
 
 @router.get("/post/{post_id}/edit")

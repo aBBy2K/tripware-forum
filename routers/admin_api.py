@@ -45,6 +45,16 @@ async def ban(request: Request, admin = Depends(require_admin), db = Depends(get
         context={"e": ban_unban["message"]}
     )
 
+@router.get("/moderation")
+async def moderation_page(request: Request, admin = Depends(require_admin), db = Depends(get_db), current_user = Depends(get_current_user)):
+    posts = await AdminForumRepository.get_all_hidden_posts(db)
+
+    return template.TemplateResponse(
+        request=request,
+        name="admin/posts_moderation.html",
+        context={"posts": posts}
+    )
+
 @router.get("/reports")
 async def reports_page(request: Request, admin = Depends(require_admin), db = Depends(get_db)):
     reports = await AdminForumRepository.get_reports(db)
@@ -124,3 +134,15 @@ async def pool():
     print("AFTER:", engine.pool.status())
 
     return {"ok": True}
+
+@router.get("/groq-models")
+async def groq(current_user = Depends(get_current_user), admin = Depends(require_admin)):
+    import httpx
+    import os
+
+    response = httpx.get(
+        "https://api.groq.com/openai/v1/models",
+        headers={"Authorization": f"Bearer {os.environ['GROQ_API_KEY']}"}
+    )
+    print(response.status_code)
+    print(response.json())
