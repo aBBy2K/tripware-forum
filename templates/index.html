@@ -51,7 +51,12 @@
 
 <!-- JS FULLY AI GENERATED -->
 <script>
-const socket = new WebSocket(`wss://${window.location.host}/ws`);
+
+const wsProtocol = window.location.protocol === "https:"
+    ? "wss"
+    : "ws";
+
+const socket = new WebSocket(`${wsProtocol}://${window.location.host}/ws`);
 
 const sendBtn = document.getElementById("send-btn");
 const msgInput = document.getElementById("input-msg");
