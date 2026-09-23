@@ -15,10 +15,16 @@
             {% if msg.sender_id == current_user.id %}
                 <div class="my-msgs">
                     You: {{ msg.msg }}
+                    {% for img in msg.imgs %}
+                        <img src="{{ img.pic_path }}" class="msg-img">
+                    {% endfor %}
                 </div>
             {% else %}
                 <div class="frg-msgs">
                     {{ msg.sender.name }}: {{ msg.msg }}
+                    {% for img in msg.imgs %}
+                        <img src="{{ img.pic_path }}" class="msg-img">
+                    {% endfor %}
                 </div>
             {% endif %}
         {% endfor %}
@@ -26,48 +32,102 @@
 
     <div class="msg-chat-container">
         <textarea placeholder="Your message" id="input-msg"></textarea>
+        {% if recipient.id != 11 %}
+            <input type="file" accept="image/*" multiple id="imgs">
+        {% endif %}
         <button id="send-btn" style="background: #1b1b1b; border: 1px solid #323232">Send</button>
     </div>
 </div>
 
-<script>
-const socket = new WebSocket(`wss://${window.location.host}/dms/ws`);
-
-const sendBtn = document.getElementById("send-btn");
-const msgInput = document.getElementById("input-msg");
-const myMsgsDiv = document.getElementById("my-msgs");
-const frgMsgsDiv = document.getElementById("frg-msgs");
-
-const currentUserName = "{{ current_user.name }}";
-const recipientId = {{ recipient.id }};
-const recipientName = "{{ recipient.name }}";
-const messagesContainer = document.getElementById("messages");
-
-function appendMessage(className, name, text) {
-    const div = document.createElement("div");
-    div.className = className;
-    div.textContent = `${name}: ${text}`;
-    messagesContainer.appendChild(div);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+<style>
+.msg-img {
+    display: block;
+    max-width: 200px;
+    max-height: 200px;
+    margin-top: 5px;
+    border-radius: 6px;
 }
+</style>
 
-sendBtn.addEventListener("click", () => {
-    const text = msgInput.value.trim();
-    if (!text) return;
+<script>
 
-    socket.send(JSON.stringify({ recipient_id: recipientId, msg: text }));
-    appendMessage("my-msgs", currentUserName, text);
-    msgInput.value = "";
-});
+    const wsProtocol = window.location.protocol === "https:"
+        ? "wss"
+        : "ws";
 
-socket.onmessage = function(event) {
-    const data = JSON.parse(event.data);
+    const sendBtn = document.getElementById("send-btn");
+    const msgInput = document.getElementById("input-msg");
+    const imgsInput = document.getElementById("imgs")
+    const messagesContainer = document.getElementById("messages");
 
-    if (data.type === "dm_msg") {
-        appendMessage("frg-msgs", recipientName, data.msg);
+    const currentUserName = "{{ current_user.name }}";
+    const recipientId = {{ recipient.id }};
+    const recipientName = "{{ recipient.name }}";
+
+    let socket
+
+    if (recipientId === 11) { //id 11 - ai assistent
+        socket = new WebSocket(`${wsProtocol}://${window.location.host}/dms/ai/ws`); 
+    } else {
+        socket = new WebSocket(`${wsProtocol}://${window.location.host}/dms/ws`);
     }
-};
-</script>
 
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function appendMessage(className, name, text, imgs = []) {
+        const div = document.createElement("div");
+        div.className = className;
+        div.textContent = `${name}: ${text}`;
+
+        imgs.forEach(src => {
+            const img = document.createElement("img");
+            img.className = "msg-img";
+
+            img.onerror = () => {
+                if (!img.dataset.retried) {
+                    img.dataset.retried = "1";
+                    setTimeout(() => {
+                        img.src = src; // повторная попытка через полсекунды
+                    }, 500);
+                }
+            };
+
+            img.src = src;
+            div.appendChild(img);
+        });
+
+        messagesContainer.appendChild(div);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    sendBtn.addEventListener("click", async () => {
+        const text = msgInput.value.trim();
+        const files = Array.from(imgsInput.files);
+        const imgs = await Promise.all(files.map(fileToBase64));
+
+        if (!text && imgs.length === 0) return;
+
+        socket.send(JSON.stringify({ recipient_id: recipientId, msg: text, imgs: imgs }));
+        appendMessage("my-msgs", currentUserName, text, imgs);
+
+        msgInput.value = "";
+        imgsInput.value = "";
+    });
+
+    socket.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+
+        if (data.type === "dm_msg") {
+            appendMessage("frg-msgs", recipientName, data.msg, data.imgs || []);
+        }
+    };
+</script>
 
 {% endblock %}

@@ -1,7 +1,7 @@
 from sqlalchemy import select, and_, or_
 from sqlalchemy.orm import selectinload
 
-from models.messages import Messages
+from models.messages import Messages, ImgsInMSGS
 from models.users import Users
 
 
@@ -19,6 +19,16 @@ class MsgRepository:
             await db.rollback()
 
     @classmethod
+    async def add_imgs(cls, msg_id, paths: list[str], db):
+        if paths:
+            for path in paths:
+                img = ImgsInMSGS(pic_path=path, msg_id=msg_id)
+            db.add(img)
+            await db.commit()
+            await db.refresh(img)
+            return img
+
+    @classmethod
     async def get_convos(cls, current_user, db):
         stmt1 = select(Messages.recipient_id).where(Messages.sender_id == current_user.id)
         stmt2 = select(Messages.sender_id).where(Messages.recipient_id == current_user.id)
@@ -31,12 +41,12 @@ class MsgRepository:
         return result.all()
 
     @classmethod
-    async def get_messages(cls, current_user, user_id, db):
+    async def get_messages(cls, current_user, user_id, db, limit = None):
         stmt = select(Messages).where(
             or_(
                 and_(Messages.recipient_id == current_user.id, Messages.sender_id == user_id),
                 and_(Messages.recipient_id == user_id, Messages.sender_id == current_user.id)
             )
-        ).options(selectinload(Messages.sender))
+        ).options(selectinload(Messages.sender), selectinload(Messages.imgs)).order_by(Messages.created_at.asc()).limit(limit)
         result = await db.scalars(stmt)
         return result.all()

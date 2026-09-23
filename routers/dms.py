@@ -13,6 +13,8 @@ from services.dms_service import DMsServices
 from services.profile_service import ProfileService
 from services.users import UsersService
 from templates.template_config import template
+from services.gpt import GPTService
+from dependencies.dependencies import get_gpt_service
 
 router = APIRouter(prefix="/dms", tags=["DMs"])
 
@@ -53,3 +55,12 @@ async def ws(ws: WebSocket, current_user = Depends(get_current_user_ws)):
     )
 
     result = await DMsServices.ws(ws, current_user)
+
+@router.websocket("/ai/ws")
+async def ai_ws(ws: WebSocket, current_user = Depends(get_current_user_ws), gpt_service: GPTService = Depends(get_gpt_service)):
+    print(
+        "WS CONNECTED:",
+        current_user.id
+    )
+
+    result = await DMsServices.ai_ws(ws, current_user, gpt_service)
