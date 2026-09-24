@@ -368,3 +368,11 @@ nav {
     border: 1px solid #323232;
     background: #232323;
 }
+
+.msg-img {
+    display: block;
+    max-width: 200px;
+    max-height: 200px;
+    margin-top: 5px;
+    border-radius: 6px;
+}
