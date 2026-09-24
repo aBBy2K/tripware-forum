@@ -32,22 +32,10 @@
 
     <div class="msg-chat-container">
         <textarea placeholder="Your message" id="input-msg"></textarea>
-        {% if recipient.id != 11 %}
-            <input type="file" accept="image/*" multiple id="imgs">
-        {% endif %}
+        <input type="file" accept="image/*" multiple id="imgs">
         <button id="send-btn" style="background: #1b1b1b; border: 1px solid #323232">Send</button>
     </div>
 </div>
-
-<style>
-.msg-img {
-    display: block;
-    max-width: 200px;
-    max-height: 200px;
-    margin-top: 5px;
-    border-radius: 6px;
-}
-</style>
 
 <script>
 
