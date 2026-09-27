@@ -43,10 +43,10 @@ async def required_role(subcat_id: int, db=Depends(get_db), current_user=Depends
     return subcategory
 
 @router.get("/search")
-async def search(request: Request, q: str = "", db = Depends(get_db), current_user = Depends(get_current_user)):
+async def search(request: Request, q: str = "", sort_by: str | None = None, sort_order: str | None = None, db = Depends(get_db), current_user = Depends(get_current_user)):
     posts = []
     if q.strip():
-        posts = await ForumRepository.search(q, db)
+        posts = await ForumRepository.search(q, db, sort_by=sort_by, sort_order=sort_order)
 
     return template.TemplateResponse(
         request=request,
@@ -264,7 +264,7 @@ async def edit_post_page(request: Request, post_id: int, db = Depends(get_db), c
     )
 
 @router.post("/post/{post_id}/edit")
-async def edit_post(request: Request, post_id: int, post_title: str | None = Form(None), post_body: str | None = Form(None), imgs: Annotated[list[UploadFile], File()] = [], allow_comms: bool = Form(False) , db = Depends(get_db), current_user = Depends(get_current_user)):
+async def edit_post(request: Request, bgtask: BackgroundTasks , post_id: int, post_title: str | None = Form(None), post_body: str | None = Form(None), imgs: Annotated[list[UploadFile], File()] = [], allow_comms: bool = Form(False) , db = Depends(get_db), current_user = Depends(get_current_user), moderation_service: ModerationService = Depends(get_moderation_service)):
     print(f"allow_comms: {allow_comms}")
     print(f"type: ", type(allow_comms))
 
@@ -279,7 +279,7 @@ async def edit_post(request: Request, post_id: int, post_title: str | None = For
     post_images = await ForumRepository.get_post_imgs_count(post_id, db)
 
 
-    res = await ForumService.edit_post(post, post_title, post_body, imgs, post_images, allow_comms, db)
+    res = await ForumService.edit_post(post, post_title, post_body, imgs, post_images, allow_comms, db, bgtask=bgtask, moderation_service=moderation_service)
 
     return template.TemplateResponse(
         request=request,

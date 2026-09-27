@@ -1,16 +1,36 @@
 from datetime import datetime
-from sqlalchemy import select, and_, or_, delete, func, text, update
-from sqlalchemy.orm import selectinload
+from sqlalchemy import select, and_, or_, delete, func, text, update, asc, desc, union, distinct
+from sqlalchemy.orm import selectinload, aliased
 
 from models import Users
 from models.forum import Categories, SubCategories, Posts, PostComments, PostLikes, Reports, CommentsLikes, PostImages
 
+SORTABLE = {
+    "created_at": Posts.created_at,
+    "title": Posts.title,
+    "views": Posts.views
+}
 
 class ForumRepository:
     @classmethod
-    async def search(cls, query, db):
-        stmt = select(Posts).where(text("MATCH(title, body) AGAINST(:q IN NATURAL LANGUAGE MODE)")).params(q=query).options(selectinload(Posts.author), selectinload(Posts.subcategory)).limit(20)
+    async def search(cls, query, db, sort_by = "created_at", sort_order = "asc"):
+        order_func = desc if sort_order == "desc" else asc
+        column = SORTABLE.get(sort_by, Posts.created_at)
+
+        stmt1 = select(Posts).where(text("MATCH(title, body) AGAINST(:q IN NATURAL LANGUAGE MODE)")).params(q=query)
+        stmt2 = select(Posts).where(or_(
+            Posts.title.like(f'%{query}%'),
+            Posts.body.like(f'%{query}%')
+        ))
+
+        union_sq = union(stmt1, stmt2).subquery()
+
+        posts_alias = aliased(Posts, union_sq)
+
+        stmt = select(posts_alias).options(selectinload(posts_alias.author), selectinload(posts_alias.subcategory)).order_by(order_func(getattr(posts_alias, column.key))).limit(20)
+
         result = await db.scalars(stmt)
+
         return result.all()
 
     @classmethod

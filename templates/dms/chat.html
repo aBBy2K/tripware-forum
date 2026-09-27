@@ -30,6 +30,8 @@
         {% endfor %}
         </div>
 
+    <p id="typingStatus" style="font-style: italic;"></p>
+
     <div class="msg-chat-container">
         <textarea placeholder="Your message" id="input-msg"></textarea>
         <input type="file" accept="image/*" multiple id="imgs">
@@ -47,12 +49,17 @@
     const msgInput = document.getElementById("input-msg");
     const imgsInput = document.getElementById("imgs")
     const messagesContainer = document.getElementById("messages");
+    const typingStatus = document.getElementById("typingStatus");
 
     const currentUserName = "{{ current_user.name }}";
     const recipientId = {{ recipient.id }};
     const recipientName = "{{ recipient.name }}";
 
+    const doneTypingInterval = 1000; // ms — сколько ждать тишины перед "не печатает"
+
     let socket
+    let isTyping = false;
+    let typingTimer = null;
 
     if (recipientId === 11) { //id 11 - ai assistent
         socket = new WebSocket(`${wsProtocol}://${window.location.host}/dms/ai/ws`); 
@@ -68,6 +75,41 @@
             reader.readAsDataURL(file);
         });
     }
+
+    function sendTypingStatus(typing) {
+        if (socket.readyState !== WebSocket.OPEN) return;
+        socket.send(JSON.stringify({
+            type: "sys",
+            istyping: typing,
+            recipient_id: recipientId,
+            msg: "typing..."
+        }));
+    }
+
+    function stopTyping() {
+        clearTimeout(typingTimer);
+        if (isTyping) {
+            isTyping = false;
+            sendTypingStatus(false);
+        }
+    }
+
+    msgInput.addEventListener('input', () => {
+        if (!isTyping) {
+            isTyping = true;
+            sendTypingStatus(true);
+        }
+        clearTimeout(typingTimer);
+
+        typingTimer = setTimeout(() => {
+            isTyping = false;
+            sendTypingStatus(false);
+        }, doneTypingInterval);
+    });
+
+    // если пользователь ушёл из поля ввода или со страницы — не оставляем статус висеть
+    msgInput.addEventListener('blur', stopTyping);
+    window.addEventListener('beforeunload', stopTyping);
 
     function appendMessage(className, name, text, imgs = []) {
         const div = document.createElement("div");
@@ -102,7 +144,9 @@
 
         if (!text && imgs.length === 0) return;
 
-        socket.send(JSON.stringify({ recipient_id: recipientId, msg: text, imgs: imgs }));
+        stopTyping(); // сбрасываем статус "печатает" сразу после отправки
+
+        socket.send(JSON.stringify({type: "user", recipient_id: recipientId, msg: text, imgs: imgs }));
         appendMessage("my-msgs", currentUserName, text, imgs);
 
         msgInput.value = "";
@@ -113,7 +157,15 @@
         const data = JSON.parse(event.data);
 
         if (data.type === "dm_msg") {
-            appendMessage("frg-msgs", recipientName, data.msg, data.imgs || []);
+            if (data.msg_type === "sys") {
+                if (data.istyping === true) {
+                    typingStatus.innerHTML = "typing...";
+                } else if (data.istyping === false) {
+                    typingStatus.innerHTML = "";
+                }
+            } else if (data.msg_type === "user") {
+                appendMessage("frg-msgs", recipientName, data.msg, data.imgs || []);
+            }
         }
     };
 </script>

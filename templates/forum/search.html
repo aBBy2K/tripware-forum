@@ -2,7 +2,11 @@
 {% block content %}
 <div class="posts-container">
     {% if q %}
-        <p>Результаты по запросу: <b>{{ q }}</b></p>
+        <p>Results: <b>{{ q }}</b></p>
+        <div>
+            Sort by: <a href="#" onclick="setParam('sort_by', 'created_at')">Creation date</a>, <a href="#" onclick="setParam('sort_by', 'title')">Title</a>, <a href="#" onclick="setParam('sort_by', 'views')">Views</a><br>
+            Sort order: <a href="#" onclick="setParam('sort_order', 'asc')">Asc</a>, <a href="#" onclick="setParam('sort_order', 'desc')">Desc</a>
+        </div>
         {% if posts %}
             <p>Posts</p>
             {% for post in posts %}
@@ -19,10 +23,18 @@
             </div>
             {% endfor %}
         {% else %}
-            <p>Ничего не найдено :(</p>
+            <p>Nothing's here :(</p>
         {% endif %}
     {% else %}
-        <p>Введи запрос для поиска</p>
+        <p></p>
     {% endif %}
 </div>
+
+<script>
+    function setParam(key, value) {
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set(key, value);
+        window.location.search = urlParams.toString();
+    }
+</script>
 {% endblock %}
