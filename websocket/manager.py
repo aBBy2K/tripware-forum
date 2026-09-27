@@ -117,7 +117,7 @@ class ConnectionManager:
 
         print(f"[ websocket ]: info: disconnected from dm ws new user with id {user_id}")
 
-    async def send_dm(self, sender_id: int, recipient_id: int, msg: str, imgs: list):
+    async def send_dm(self, msg_type: str, sender_id: int, recipient_id: int, msg: str, imgs: list | None = None, istyping: bool | None = None):
         print(
             "SEND_DM:",
             recipient_id,
@@ -138,9 +138,11 @@ class ConnectionManager:
 
                 await socket.send_json({
                     "type": "dm_msg",
+                    "msg_type": msg_type,
                     "sender_id": sender_id,
                     "recipient_id": recipient_id,
                     "msg": msg,
+                    "istyping": istyping,
                     "imgs": imgs
                 })
             except Exception as e:

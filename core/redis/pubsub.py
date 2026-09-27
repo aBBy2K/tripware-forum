@@ -34,10 +34,12 @@ class PubSub:
 
                     if data["type"] == "dm_msg":
                         await self.manager.send_dm(
+                            msg_type=data["msg_type"],
                             sender_id=data["sender_id"],
                             recipient_id=data["recipient_id"],
                             msg=data["msg"],
-                            imgs=data["imgs"]
+                            istyping=data["istyping"],
+                            imgs=data["imgs"],
                         )
 
                     elif data["type"] == "cbm":

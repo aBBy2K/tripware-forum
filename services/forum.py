@@ -257,7 +257,7 @@ class ForumService:
         return {int(x) for x in await redis.smembers(key)}
 
     @staticmethod
-    async def edit_post(post, post_title: str, post_body: str, imgs, aa_imgs, allow_comms: bool, db):
+    async def edit_post(post, post_title: str, post_body: str, imgs, aa_imgs, allow_comms: bool, db, bgtask: BackgroundTasks, moderation_service: ModerationService = Depends(get_moderation_service)):
         cached = await redis.get(f"post:{post.id}")
 
         try:
@@ -310,6 +310,10 @@ class ForumService:
 
         if cached:
             await redis.delete(f"post:{post.id}")
+
+        post.visibility_option = 3
+
+        bgtask.add_task(moderation_bg, post.id, db, moderation_service)
 
         return {
             "success": True,

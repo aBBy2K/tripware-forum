@@ -57,41 +57,61 @@ class DMsServices:
             while True:
                 data = await websocket.receive_json()
 
+                type = data["type"]
                 recipient_id = data["recipient_id"]
                 msg = data["msg"]
-                imgs = data["imgs"]
 
-                async with SessionLocal() as db:
-                    message = await MsgRepository.create(sender_id=current_user.id, recipient_id=recipient_id, msg=msg, db=db)
+                if type == "sys":
+                    istyping = data["istyping"]
 
-                try:
-                    imgs_paths = await StorageService.save_img_dm(imgs)
-                except ValueError:
-                    continue
+                    result = await redis.publish(
+                        f"chat:user:{recipient_id}",
+                        json.dumps({
+                            "type": "dm_msg",
+                            "msg_type": "sys",
+                            "sender_id": current_user.id,
+                            "recipient_id": recipient_id,
+                            "msg": msg,
+                            "istyping": istyping,
+                            "imgs": None
+                        }))
+                    
+                elif type == "user":
+                    imgs = data["imgs"]
 
-                async with SessionLocal() as db:
-                    await MsgRepository.add_imgs(message.id, imgs_paths, db)
+                    async with SessionLocal() as db:
+                        message = await MsgRepository.create(sender_id=current_user.id, recipient_id=recipient_id, msg=msg, db=db)
 
-                if message is None:
-                    continue
+                    try:
+                        imgs_paths = await StorageService.save_img_dm(imgs)
+                    except ValueError:
+                        continue
 
-                result = await redis.publish(
-                    f"chat:user:{recipient_id}",
-                    json.dumps({
-                        "type": "dm_msg",
-                        "sender_id": current_user.id,
-                        "recipient_id": recipient_id,
-                        "msg": msg,
-                        "imgs": imgs_paths
-                    })
-                )
+                    async with SessionLocal() as db:
+                        await MsgRepository.add_imgs(message.id, imgs_paths, db)
 
-                print("PUBLISHED", result)
-                # await manager.send_dm(
-                #     current_user.id,
-                #     recipient_id,
-                #     msg
-                # )
+                    if message is None:
+                        continue
+
+                    result = await redis.publish(
+                        f"chat:user:{recipient_id}",
+                        json.dumps({
+                            "type": "dm_msg",
+                            "msg_type": "user",
+                            "sender_id": current_user.id,
+                            "recipient_id": recipient_id,
+                            "msg": msg,
+                            "istyping": None,
+                            "imgs": imgs_paths
+                        })
+                    )
+
+                    print("PUBLISHED", result)
+                    # await manager.send_dm(
+                    #     current_user.id,
+                    #     recipient_id,
+                    #     msg
+                    # )
         except WebSocketDisconnect:
             pass
         except Exception as e:
