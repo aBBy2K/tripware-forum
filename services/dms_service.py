@@ -11,9 +11,22 @@ from websocket.manager import manager
 from services.storage import StorageService
 from dependencies.dependencies import get_gpt_service
 from services.gpt import GPTService
+from services.notifications import NotificationsService
 
 async def ai_bg(prompt, recipient_id, current_user, gpt_service: GPTService):
     try:
+        await redis.publish(
+            f"chat:user:{recipient_id}",
+            json.dumps({
+                "type": "dm_msg",
+                "msg_type": "sys",
+                "sender_id": current_user.id,
+                "recipient_id": recipient_id,
+                "msg": "typing...",
+                "istyping": True,
+                "imgs": None
+            }))
+
         async with SessionLocal() as db:
             history = await MsgRepository.get_messages(current_user, recipient_id, db, 10)
 
@@ -31,13 +44,16 @@ async def ai_bg(prompt, recipient_id, current_user, gpt_service: GPTService):
         async with SessionLocal() as db:
             await MsgRepository.create(11, current_user.id, response["response"], db)
 
+
         result = await redis.publish(
             f"chat:user:{recipient_id}",
             json.dumps({
-            "type": "dm_msg",
-            "sender_id": recipient_id,
-            "recipient_id": current_user.id,
+                "type": "dm_msg",
+                "msg_type": "user",
+                "sender_id": recipient_id,
+                "recipient_id": current_user.id,
                 "msg": response["response"],
+                "istyping": None,
                 "imgs": None
             })
         )
@@ -79,6 +95,18 @@ class DMsServices:
                 elif type == "user":
                     imgs = data["imgs"]
 
+                    if len(imgs) > 5:
+                        async with SessionLocal() as db:
+                            await NotificationsService.add_notif(
+                                n_type="notification",
+                                head="Too many pictures",
+                                body="You can add up to 5 pictures per message",
+                                is_read=True,
+                                user_id=current_user.id,
+                                db=db
+                            )
+                        continue
+
                     async with SessionLocal() as db:
                         message = await MsgRepository.create(sender_id=current_user.id, recipient_id=recipient_id, msg=msg, db=db)
 
@@ -104,6 +132,15 @@ class DMsServices:
                             "istyping": None,
                             "imgs": imgs_paths
                         })
+                    )
+
+                    await NotificationsService.add_notif(
+                        n_type="notification",
+                        head="New direct message",
+                        body=f"You got new direct message: '{msg}' from {current_user.name}",
+                        is_read=True,
+                        user_id=recipient_id,
+                        db=db
                     )
 
                     print("PUBLISHED", result)
@@ -137,6 +174,10 @@ class DMsServices:
         
                 recipient_id = data["recipient_id"]
                 msg = data["msg"]
+                type = data["type"]
+
+                if type != "user":
+                    continue
 
                 async with SessionLocal() as db:
                     message = await MsgRepository.create(sender_id=current_user.id, recipient_id=recipient_id, msg=msg, db=db)

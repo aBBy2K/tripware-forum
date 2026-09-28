@@ -15,6 +15,8 @@ from services.chatbox_service import CBService
 from services.forum import ForumService
 from templates.template_config import template
 from templates.filters import last_seen
+from services.gpt import GPTService
+from dependencies.dependencies import get_gpt_service
 
 from routers.auth_api import router as auth
 from routers.profile_api import router as profile
@@ -35,6 +37,7 @@ async def sync_views_loop():
             print("POOL: ", engine.pool.status())
             await asyncio.sleep(60)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 
@@ -52,7 +55,7 @@ async def lifespan(app: FastAPI):
     listener_task = asyncio.create_task(
         pubsub.listen()
     )
-
+    
     try:
         yield
 
@@ -107,7 +110,10 @@ async def index(request: Request, current_user = Depends(get_current_user), db =
 
 @app.websocket("/ws")
 async def ws(websocket: WebSocket, current_user = Depends(get_current_user_ws)):
-    message = await CBService.ws(websocket, current_user)
+    current_user_id = current_user.id
+    current_user_name = current_user.name
+
+    message = await CBService.ws(websocket, current_user_id, current_user_name)
 
 @app.get("/debug/tasks")
 async def debug_tasks():

@@ -1,14 +1,17 @@
+import asyncio
 from datetime import datetime, timedelta
 from fastapi import Depends, Request, HTTPException, WebSocket, WebSocketException, status
 from fastapi.responses import RedirectResponse
 from jose import jwt, JWTError
-from sqlalchemy import select
+from sqlalchemy import select, delete
 
 from database.database import get_db, engine, SessionLocal
 from models.users import Users
+from models.subscription import Subs
 from repositories.users import UsersRepository
 from config import DB_SECRET_KEY
 from templates.template_config import template
+from services.notifications import NotificationsService
 
 SECRET_KEY = DB_SECRET_KEY
 ALIVE = 30
@@ -70,6 +73,19 @@ async def get_current_user(request: Request, db = Depends(get_db)):
             status_code=403,
             detail=f"Your account is banned. Reason: {user.ban_reason}"
         )
+    if user.sub:
+        if user.sub.expires_at < datetime.now():
+            async with SessionLocal() as db:
+                await db.execute(delete(Subs).where(Subs.id == user.sub.id))
+                await db.commit()
+                await NotificationsService.add_notif(
+                    n_type="notification",
+                    head="Expired subscription",
+                    body="Your subscription has expired",
+                    user_id=user.id,
+                    is_read=False,
+                    db=db
+                )
 
     return user
 

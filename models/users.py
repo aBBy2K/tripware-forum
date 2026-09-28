@@ -1,8 +1,11 @@
 from datetime import datetime
-
+from typing import TYPE_CHECKING
 from sqlalchemy import Integer, String, Boolean, ForeignKey, Text, DateTime, func
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 from database.database import Base
+
+if TYPE_CHECKING:
+    from models.subscription import Subs
 
 class Users(Base):
     __tablename__ = "users"
@@ -19,6 +22,7 @@ class Users(Base):
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     verification_token = mapped_column(String(32))
 
+    sub: Mapped["Subs | None"] = relationship(back_populates="user")
     role: Mapped["Roles"] = relationship(foreign_keys=[role_id])
 
 class UsersSubscribers(Base):

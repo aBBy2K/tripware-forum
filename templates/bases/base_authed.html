@@ -45,6 +45,7 @@
 
 
     const notifSocket = new WebSocket(`ws://${window.location.host}/profile/notifications/ws`);
+    const notificationSound = new Audio('/static/assets/notification.mp3');
     let unreadCount = 0;
 
     // window.addEventListener("pagehide", () => {
@@ -52,6 +53,22 @@
     //     notifSocket.close(1000, "page navigation");
     //     }
     // });
+
+    function playNotification() {
+            notificationSound.currentTime = 0;
+            notificationSound.volume = 0.5;
+            
+            notificationSound.play()
+                .then(() => {
+                    console.log("success");
+                })
+                .catch(error => {
+                    console.warn("b");
+                    document.addEventListener('click', () => {
+                        notificationSound.play();
+                    }, { once: true });
+                });
+            }
 
     function showNotification(head, body) {
         const notification = document.createElement("div");
@@ -86,6 +103,7 @@
         `;
 
         document.body.appendChild(notification);
+        playNotification();
 
         setTimeout(() => {
             notification.remove();

@@ -214,6 +214,9 @@ nav {
 
     border: 1px solid #323232;
     height: 150px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    word-break: break-word;
 }
 
 .msg-chatbox-container {
@@ -375,4 +378,46 @@ nav {
     max-height: 200px;
     margin-top: 5px;
     border-radius: 6px;
+}
+
+.attach-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.attach-btn:hover {
+    background: #2a2a2a;
+}
+
+.attach-icon {
+    width: 22px;
+    height: 22px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.attach-btn:hover .attach-icon {
+    opacity: 1;
+}
+
+.imgs-count {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 8px;
+    background: #4c8bf5;
+    color: #fff;
+    font-size: 11px;
+    line-height: 16px;
+    text-align: center;
 }
