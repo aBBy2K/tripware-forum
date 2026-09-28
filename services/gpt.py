@@ -53,3 +53,35 @@ class GPTService:
                 "failure": True,
                 "response": None,
             }
+
+    async def random_fact_cb(self) -> dict:
+        try:
+            response = await self.client.post("/chat/completions", json={
+                "model": "openai/gpt-oss-20b",
+                "response_format": {"type": "json_object"},
+                "max_tokens": 500,
+                "reasoning_effort": "low",
+                "messages": [{
+                    "role": "user",
+                    "content": """Сгенерируй рандомный не длинный но и не короткий факт о чем угодно
+                    
+                    Ответь ТОЛЬКО JSON: {"response": ответ}
+                    """
+                }]
+            })
+            response.raise_for_status()
+
+            data = response.json()
+            raw = data["choices"][0]["message"]["content"]
+            parsed = json.loads(raw)
+
+            return {
+                "failure": False,
+                "response": parsed["response"],
+            }
+        except (httpx.HTTPError, KeyError, json.JSONDecodeError) as e:
+            print(f"AI random fact generation failed: {e}")
+            return {
+                "failure": True,
+                "response": None,
+            }

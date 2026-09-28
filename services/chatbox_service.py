@@ -9,7 +9,7 @@ from websocket.manager import manager
 
 class CBService:
     @staticmethod
-    async def ws(websocket: WebSocket, current_user):
+    async def ws(websocket: WebSocket, current_user_id, current_user_name):
         await websocket.accept()
         await manager.cb_connect(websocket)
 
@@ -20,7 +20,7 @@ class CBService:
                 msg = data["msg"]
                 print("POOL: ", engine.pool.status())
                 async with SessionLocal() as db:
-                    message = await CBMSGSRepository.create(current_user.id, msg, db)
+                    message = await CBMSGSRepository.create(current_user_id, msg, db)
                 print("POOL: ", engine.pool.status())
                 if message is None:
                     continue
@@ -29,8 +29,8 @@ class CBService:
                     f"cb:user",
                     json.dumps({
                         "type": "cbm",
-                        "sender_id": current_user.id,
-                        "sender_name": current_user.name,
+                        "sender_id": current_user_id,
+                        "sender_name": current_user_name,
                         "msg": msg
                     })
                 )

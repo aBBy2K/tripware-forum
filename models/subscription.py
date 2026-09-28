@@ -2,9 +2,11 @@ from datetime import datetime
 
 from sqlalchemy import Integer, String, Boolean, ForeignKey, Text, DateTime
 from sqlalchemy.orm import mapped_column, Mapped, relationship
-
-from models.users import Users
 from database.database import Base
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from models.users import Users
 
 class Subs(Base):
     __tablename__ = "subscription"

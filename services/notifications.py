@@ -8,7 +8,7 @@ from repositories.notifications import NotificationsRepository
 from repositories.users import UsersRepository
 from services.users import UsersService
 from websocket.manager import manager
-
+from security.email import notification_email
 
 class NotificationsService:
     @staticmethod
@@ -58,6 +58,8 @@ class NotificationsService:
                 }
             })
         )
+
+        await notification_email(user["email"], head, body)
 
         # await manager.notify(user_id, {
         #     "user_id": user_id,

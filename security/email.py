@@ -48,3 +48,21 @@ async def password_recovery_email(email: str, token: str):
     fm = FastMail(conf)
 
     await fm.send_message(message)
+
+async def notification_email(email: str, head: str, body: str):
+    message = MessageSchema(
+        subject="tripware.club / new notification",
+        recipients=[email],
+        body=f"""
+            {head}
+            
+            {body}
+            
+            TRIPWARE.CLUB
+            """,
+            subtype="plain"
+        )
+    
+    fm = FastMail(conf)
+    
+    await fm.send_message(message)

@@ -34,7 +34,13 @@
 
     <div class="msg-chat-container">
         <textarea placeholder="Your message" id="input-msg"></textarea>
-        <input type="file" accept="image/*" multiple id="imgs">
+
+        <label for="imgs" class="attach-btn">
+            <img src="/static/assets/paper-pin.png" alt="Add imgs" class="attach-icon" width="35px" height="35px">
+            <span id="imgs-count" class="imgs-count" hidden></span>
+        </label>
+        <input type="file" accept="image/*" multiple id="imgs" hidden>
+
         <button id="send-btn" style="background: #1b1b1b; border: 1px solid #323232">Send</button>
     </div>
 </div>
@@ -48,6 +54,7 @@
     const sendBtn = document.getElementById("send-btn");
     const msgInput = document.getElementById("input-msg");
     const imgsInput = document.getElementById("imgs")
+    const imgsCount = document.getElementById("imgs-count");
     const messagesContainer = document.getElementById("messages");
     const typingStatus = document.getElementById("typingStatus");
 
@@ -66,6 +73,14 @@
     } else {
         socket = new WebSocket(`${wsProtocol}://${window.location.host}/dms/ws`);
     }
+
+    function updateImgsCount() {
+        const n = imgsInput.files.length;
+        imgsCount.hidden = n === 0;
+        imgsCount.textContent = n;
+    }
+
+    imgsInput.addEventListener("change", updateImgsCount);
 
     function fileToBase64(file) {
         return new Promise((resolve, reject) => {
@@ -107,7 +122,6 @@
         }, doneTypingInterval);
     });
 
-    // если пользователь ушёл из поля ввода или со страницы — не оставляем статус висеть
     msgInput.addEventListener('blur', stopTyping);
     window.addEventListener('beforeunload', stopTyping);
 
@@ -124,7 +138,7 @@
                 if (!img.dataset.retried) {
                     img.dataset.retried = "1";
                     setTimeout(() => {
-                        img.src = src; // повторная попытка через полсекунды
+                        img.src = src;
                     }, 500);
                 }
             };
@@ -144,13 +158,14 @@
 
         if (!text && imgs.length === 0) return;
 
-        stopTyping(); // сбрасываем статус "печатает" сразу после отправки
+        stopTyping();
 
         socket.send(JSON.stringify({type: "user", recipient_id: recipientId, msg: text, imgs: imgs }));
         appendMessage("my-msgs", currentUserName, text, imgs);
 
         msgInput.value = "";
         imgsInput.value = "";
+        updateImgsCount();
     });
 
     socket.onmessage = function(event) {
