@@ -35,6 +35,7 @@ class PubSub:
                     if data["type"] == "dm_msg":
                         await self.manager.send_dm(
                             msg_type=data["msg_type"],
+                            client_id=data["client_id"],
                             sender_id=data["sender_id"],
                             recipient_id=data["recipient_id"],
                             msg=data["msg"],

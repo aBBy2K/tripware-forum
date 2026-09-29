@@ -14,16 +14,16 @@
         {% for msg in messages %}
             {% if msg.sender_id == current_user.id %}
                 <div class="my-msgs">
-                    You: {{ msg.msg }}
+                    <p id="{{ msg.client_id }}" class='{{ msg.client_id }}'>You: {{ msg.msg }} - <a href="#" onclick="deleteMsg('{{ msg.client_id }}')">Delete</a></p>
                     {% for img in msg.imgs %}
-                        <img src="{{ img.pic_path }}" class="msg-img">
+                        <img id="{{ msg.client_id }}" src="{{ img.pic_path }}" class="msg-img {{ msg.client_id }}"> - <a href="#" onclick="deleteMsg('{{ msg.client_id }}')">Delete</a>
                     {% endfor %}
                 </div>
             {% else %}
                 <div class="frg-msgs">
-                    {{ msg.sender.name }}: {{ msg.msg }}
+                    <p id="{{ msg.client_id }}" class='{{ msg.client_id }}'>{{ msg.sender.name }}: {{ msg.msg }}</p>
                     {% for img in msg.imgs %}
-                        <img src="{{ img.pic_path }}" class="msg-img">
+                        <img id="{{ msg.client_id }}" src="{{ img.pic_path }}" class="msg-img {{ msg.client_id }}">
                     {% endfor %}
                 </div>
             {% endif %}
@@ -59,10 +59,11 @@
     const typingStatus = document.getElementById("typingStatus");
 
     const currentUserName = "{{ current_user.name }}";
+    const currentUserID = {{ current_user.id }};
     const recipientId = {{ recipient.id }};
     const recipientName = "{{ recipient.name }}";
 
-    const doneTypingInterval = 1000; // ms — сколько ждать тишины перед "не печатает"
+    const doneTypingInterval = 1000;
 
     let socket
     let isTyping = false;
@@ -95,6 +96,7 @@
         if (socket.readyState !== WebSocket.OPEN) return;
         socket.send(JSON.stringify({
             type: "sys",
+            client_id: null,
             istyping: typing,
             recipient_id: recipientId,
             msg: "typing..."
@@ -125,14 +127,27 @@
     msgInput.addEventListener('blur', stopTyping);
     window.addEventListener('beforeunload', stopTyping);
 
-    function appendMessage(className, name, text, imgs = []) {
-        const div = document.createElement("div");
-        div.className = className;
-        div.textContent = `${name}: ${text}`;
+    function appendMessage(senderId, cid, className, name, text, imgs = []) {
+        const p = document.createElement("p");
+        p.className = `${className} ${cid}`;
+        p.id = cid
+
+        const span = document.createElement('span');
+        span.textContent = `${name}: ${text}`;
+
+        let a;
+
+        if (senderId === currentUserID) {
+            a = document.createElement('a');
+            a.href = '#';
+            a.classname = 'delete';
+            a.textContent = ' - Delete';
+            a.onclick = () => deleteMsg(cid);
+        }
 
         imgs.forEach(src => {
             const img = document.createElement("img");
-            img.className = "msg-img";
+            img.className = `msg-img ${cid}`;
 
             img.onerror = () => {
                 if (!img.dataset.retried) {
@@ -144,14 +159,30 @@
             };
 
             img.src = src;
-            div.appendChild(img);
+            p.appendChild(img);
         });
 
-        messagesContainer.appendChild(div);
+        p.append(span, a || '');
+
+        messagesContainer.appendChild(p);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
+    function deleteMsg(cid) {
+        socket.send(JSON.stringify({type: "delete", client_id: cid, recipient_id: recipientId, msg: null, imgs: null}));
+
+        const element = document.getElementsByClassName(`${cid}`);
+
+        console.log(cid);
+        console.log(element);
+
+        for (let i = element.length - 1; i >= 0; i--) {
+            element[i].remove();
+        }
+    }
+
     sendBtn.addEventListener("click", async () => {
+        const clientId = crypto.randomUUID();
         const text = msgInput.value.trim();
         const files = Array.from(imgsInput.files);
         const imgs = await Promise.all(files.map(fileToBase64));
@@ -160,8 +191,8 @@
 
         stopTyping();
 
-        socket.send(JSON.stringify({type: "user", recipient_id: recipientId, msg: text, imgs: imgs }));
-        appendMessage("my-msgs", currentUserName, text, imgs);
+        socket.send(JSON.stringify({type: "user", client_id: clientId, recipient_id: recipientId, msg: text, imgs: imgs }));
+        appendMessage(currentUserID, clientId, "my-msgs", currentUserName, text, imgs);
 
         msgInput.value = "";
         imgsInput.value = "";
@@ -179,7 +210,12 @@
                     typingStatus.innerHTML = "";
                 }
             } else if (data.msg_type === "user") {
-                appendMessage("frg-msgs", recipientName, data.msg, data.imgs || []);
+                appendMessage(data.sender_id, data.client_id, "frg-msgs", recipientName, data.msg, data.imgs || []);
+            } else if (data.msg_type === "delete") {
+                const element = document.getElementsByClassName(`${data.client_id}`);
+                for (let i = element.length - 1; i >= 0; i--) {
+                    element[i].remove();
+                }
             }
         }
     };

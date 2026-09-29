@@ -1,4 +1,4 @@
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select, and_, or_, delete
 from sqlalchemy.orm import selectinload
 
 from models.messages import Messages, ImgsInMSGS
@@ -7,9 +7,9 @@ from models.users import Users
 
 class MsgRepository:
     @classmethod
-    async def create(cls, sender_id: int, recipient_id: int, msg: str, db):
+    async def create(cls, sender_id: int, client_id: str, recipient_id: int, msg: str, db):
         try:
-            message = Messages(sender_id=sender_id, recipient_id=recipient_id, msg=msg)
+            message = Messages(client_id=client_id, sender_id=sender_id, recipient_id=recipient_id, msg=msg)
             db.add(message)
             await db.commit()
             await db.refresh(message)
@@ -19,14 +19,32 @@ class MsgRepository:
             await db.rollback()
 
     @classmethod
+    async def delete(cls, client_id: str, sender_id: int, db):
+        msg_ids = select(Messages.id).where(
+        Messages.client_id == client_id,
+        Messages.sender_id == sender_id,
+    )
+
+        await db.execute(delete(ImgsInMSGS).where(ImgsInMSGS.msg_id.in_(msg_ids)))
+        result = await db.execute(
+            delete(Messages).where(
+                Messages.client_id == client_id,
+                Messages.sender_id == sender_id,
+            )
+        )
+        await db.commit()
+
+        return True
+
+    @classmethod
     async def add_imgs(cls, msg_id, paths: list[str], db):
         if paths:
             for path in paths:
                 img = ImgsInMSGS(pic_path=path, msg_id=msg_id)
-            db.add(img)
-            await db.commit()
-            await db.refresh(img)
-            return img
+                db.add(img)
+                await db.commit()
+                await db.refresh(img)
+            return True
 
     @classmethod
     async def get_convos(cls, current_user, db):
