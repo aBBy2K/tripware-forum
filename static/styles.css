@@ -182,7 +182,12 @@ nav {
 .messages {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 0;
+}
+
+.messages p {
+    margin-top: 1px;
+    margin-bottom: 1px;
 }
 
 .recipient {

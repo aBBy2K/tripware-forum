@@ -13,7 +13,7 @@ from dependencies.dependencies import get_gpt_service
 from services.gpt import GPTService
 from services.notifications import NotificationsService
 
-async def ai_bg(prompt, recipient_id, current_user, gpt_service: GPTService):
+async def ai_bg(prompt, client_id, recipient_id, current_user, gpt_service: GPTService):
     try:
         await redis.publish(
             f"chat:user:{recipient_id}",
@@ -42,7 +42,7 @@ async def ai_bg(prompt, recipient_id, current_user, gpt_service: GPTService):
             print("AI FAILED")
 
         async with SessionLocal() as db:
-            await MsgRepository.create(11, current_user.id, response["response"], db)
+            await MsgRepository.create(11, client_id, current_user.id, response["response"], db)
 
 
         result = await redis.publish(
@@ -84,6 +84,7 @@ class DMsServices:
                         f"chat:user:{recipient_id}",
                         json.dumps({
                             "type": "dm_msg",
+                            "client_id": None,
                             "msg_type": "sys",
                             "sender_id": current_user.id,
                             "recipient_id": recipient_id,
@@ -94,6 +95,7 @@ class DMsServices:
                     
                 elif type == "user":
                     imgs = data["imgs"]
+                    client_id = data["client_id"]
 
                     if len(imgs) > 5:
                         async with SessionLocal() as db:
@@ -108,15 +110,18 @@ class DMsServices:
                         continue
 
                     async with SessionLocal() as db:
-                        message = await MsgRepository.create(sender_id=current_user.id, recipient_id=recipient_id, msg=msg, db=db)
+                        message = await MsgRepository.create(sender_id=current_user.id, client_id=client_id, recipient_id=recipient_id, msg=msg, db=db)
 
                     try:
                         imgs_paths = await StorageService.save_img_dm(imgs)
                     except ValueError:
                         continue
 
-                    async with SessionLocal() as db:
-                        await MsgRepository.add_imgs(message.id, imgs_paths, db)
+                    try:
+                        async with SessionLocal() as db:
+                            await MsgRepository.add_imgs(message.id, imgs_paths, db)
+                    except Exception:
+                        continue
 
                     if message is None:
                         continue
@@ -125,6 +130,7 @@ class DMsServices:
                         f"chat:user:{recipient_id}",
                         json.dumps({
                             "type": "dm_msg",
+                            "client_id": client_id,
                             "msg_type": "user",
                             "sender_id": current_user.id,
                             "recipient_id": recipient_id,
@@ -133,15 +139,15 @@ class DMsServices:
                             "imgs": imgs_paths
                         })
                     )
-
-                    await NotificationsService.add_notif(
-                        n_type="notification",
-                        head="New direct message",
-                        body=f"You got new direct message: '{msg}' from {current_user.name}",
-                        is_read=True,
-                        user_id=recipient_id,
-                        db=db
-                    )
+                    async with SessionLocal() as db:
+                        await NotificationsService.add_notif(
+                            n_type="notification",
+                            head="New direct message",
+                            body=f"You got new direct message: '{msg}' from {current_user.name}",
+                            is_read=True,
+                            user_id=recipient_id,
+                            db=db
+                        )
 
                     print("PUBLISHED", result)
                     # await manager.send_dm(
@@ -149,6 +155,27 @@ class DMsServices:
                     #     recipient_id,
                     #     msg
                     # )
+                elif type == "delete":
+                    client_id = data["client_id"]
+
+                    async with SessionLocal() as db:
+                        await MsgRepository.delete(client_id, current_user.id, db)
+
+                    result = await redis.publish(
+                        f"chat:user:{recipient_id}",
+                        json.dumps({
+                        "type": "dm_msg",
+                        "client_id": client_id,
+                        "msg_type": "delete",
+                        "sender_id": current_user.id,
+                        "recipient_id": recipient_id,
+                        "msg": None,
+                        "istyping": None,
+                        "imgs": None
+                    })
+                )
+                    
+
         except WebSocketDisconnect:
             pass
         except Exception as e:
@@ -171,7 +198,8 @@ class DMsServices:
         try:
             while True:
                 data = await websocket.receive_json()
-        
+
+                client_id = data["client_id"]
                 recipient_id = data["recipient_id"]
                 msg = data["msg"]
                 type = data["type"]
@@ -180,12 +208,12 @@ class DMsServices:
                     continue
 
                 async with SessionLocal() as db:
-                    message = await MsgRepository.create(sender_id=current_user.id, recipient_id=recipient_id, msg=msg, db=db)
+                    message = await MsgRepository.create(client_id=client_id, sender_id=current_user.id, recipient_id=recipient_id, msg=msg, db=db)
 
                 if message is None:
                     continue
 
-                asyncio.create_task(ai_bg(msg, recipient_id, current_user, gpt_service))
+                asyncio.create_task(ai_bg(msg, client_id, recipient_id, current_user, gpt_service))
 
         except WebSocketDisconnect:
             pass

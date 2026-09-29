@@ -117,7 +117,7 @@ class ConnectionManager:
 
         print(f"[ websocket ]: info: disconnected from dm ws new user with id {user_id}")
 
-    async def send_dm(self, msg_type: str, sender_id: int, recipient_id: int, msg: str, imgs: list | None = None, istyping: bool | None = None):
+    async def send_dm(self, msg_type: str, sender_id: int, recipient_id: int, msg: str | None = None, imgs: list | None = None, istyping: bool | None = None, client_id: str | None = None):
         print(
             "SEND_DM:",
             recipient_id,
@@ -138,6 +138,7 @@ class ConnectionManager:
 
                 await socket.send_json({
                     "type": "dm_msg",
+                    "client_id": client_id,
                     "msg_type": msg_type,
                     "sender_id": sender_id,
                     "recipient_id": recipient_id,

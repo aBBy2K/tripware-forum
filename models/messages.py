@@ -8,6 +8,7 @@ from database.database import Base
 class Messages(Base):
     __tablename__ = "messages"
 
+    client_id: Mapped[str] = mapped_column(String(128), nullable=False)
     sender_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
     recipient_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
     msg: Mapped[str] = mapped_column(Text)
