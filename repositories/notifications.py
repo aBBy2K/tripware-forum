@@ -1,4 +1,5 @@
 from sqlalchemy import select, delete, and_
+from sqlalchemy.orm import selectinload
 from models.users import Notifications
 
 class NotificationsRepository:
@@ -18,7 +19,7 @@ class NotificationsRepository:
 
     @classmethod
     async def get_by_id(cls, nid, db):
-        stmt = select(Notifications).where(Notifications.id == nid)
+        stmt = select(Notifications).where(Notifications.id == nid).options(selectinload(Notifications.user))
         notif = await db.scalars(stmt)
         return notif.one_or_none()
 

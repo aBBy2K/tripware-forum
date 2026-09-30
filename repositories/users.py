@@ -28,7 +28,7 @@ class UsersRepository:
 
     @classmethod
     async def get_by_id(cls, db, uid: int):
-        stmt = select(Users).where(Users.id == uid).options(selectinload(Users.role), selectinload(Users.sub))
+        stmt = select(Users).where(Users.id == uid).options(selectinload(Users.role), selectinload(Users.sub), selectinload(Users.notifications))
         result = await db.scalars(stmt)
         return result.one_or_none()
 

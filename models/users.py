@@ -23,6 +23,7 @@ class Users(Base):
     verification_token = mapped_column(String(32))
 
     sub: Mapped["Subs | None"] = relationship(back_populates="user")
+    notifications: Mapped[list["Notifications"]] = relationship(back_populates="user")
     role: Mapped["Roles"] = relationship(foreign_keys=[role_id])
 
 class UsersSubscribers(Base):
