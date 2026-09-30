@@ -9,6 +9,7 @@ from core.redis_conf import redis
 from core.redis.pubsub import PubSub
 from repositories.admin_forum import AdminForumRepository
 from repositories.chatbox import CBMSGSRepository
+from repositories.notifications import NotificationsRepository
 from security.auth import get_current_user, get_current_user_ws
 from database.database import get_db, SessionLocal, engine
 from services.chatbox_service import CBService
@@ -92,6 +93,10 @@ async def index(request: Request, current_user = Depends(get_current_user), db =
     token = request.cookies.get("token")
 
     if token:
+        unread = await NotificationsRepository.get_all(current_user, db)
+        
+        template.env.globals["unread_notifications"] = unread
+
         messages = await CBMSGSRepository.get(db)
 
         categories = await AdminForumRepository.get_all_categories(db)
@@ -114,12 +119,3 @@ async def ws(websocket: WebSocket, current_user = Depends(get_current_user_ws)):
     current_user_name = current_user.name
 
     message = await CBService.ws(websocket, current_user_id, current_user_name)
-
-@app.get("/debug/tasks")
-async def debug_tasks():
-    result = []
-    for t in asyncio.all_tasks():
-        stack = t.get_stack()
-        frames = [f"{f.f_code.co_filename}:{f.f_lineno} in {f.f_code.co_name}" for f in stack]
-        result.append({"name": t.get_name(), "frames": frames})
-    return result

@@ -27,7 +27,7 @@
             <a href="/profile/logout">Log out</a>
             <a href="/profile/notifications" class="notif-bell">
                 Notifications
-                <span id="notif-count" style="display:flex">0</span>
+                <span id="notif-count" style="display:flex">{{ unread_notifications | length }}</span>
             </a>
         </nav>
     </header>
@@ -46,7 +46,9 @@
 
     const notifSocket = new WebSocket(`ws://${window.location.host}/profile/notifications/ws`);
     const notificationSound = new Audio('/static/assets/notification.mp3');
-    let unreadCount = 0;
+    let unreadCount = {{ unread_notifications | length }};
+
+    console.log(unreadCount);
 
     // window.addEventListener("pagehide", () => {
     // if (notifSocket.readyState === WebSocket.OPEN || notifSocket.readyState === WebSocket.CONNECTING) {
