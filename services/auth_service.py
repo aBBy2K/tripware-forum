@@ -3,6 +3,7 @@ from passlib.hash import bcrypt
 from pydantic import EmailStr
 from fastapi.responses import RedirectResponse
 
+from core.redis_conf import redis
 from models.users import Users
 from repositories.users import UsersRepository
 from schemas.users import UsersCreate, PasswordReset
@@ -38,8 +39,15 @@ class AuthService:
 
             token = token_hex(16)
 
-            await UsersRepository.create_user(login=u.login, password=u.password, email=u.email, name=u.name, token=token, db=db)
-            # await verification_email(email, token)
+            user = await UsersRepository.create_user(login=u.login, password=u.password, email=u.email, name=u.name, token=token, db=db)
+
+
+            await redis.set(
+                f"user:{user.id}:token",
+                token,
+                ex=600
+            )
+            
             bgtask.add_task(verification_email, email, token)
 
         except ValueError as e:
@@ -60,15 +68,23 @@ class AuthService:
 
     @staticmethod
     async def verify(token: str, db):
+        error = {
+            "success": False,
+            "message": "Couldn't verify token"
+        }
+
         token_e = await UsersRepository.get_by_token(db, token)
         if not token_e:
-            return {
-                "success": False,
-                "message": "Couldn't verify token"
-            }
+            return error
+
+        token_r = await redis.get(f"user:{token_e.id}:token")
+
+        if not token_r:
+            return error
 
         token_e.is_verified = True
         await db.commit()
+        await redis.delete(f"user:{token_e.id}:token")
 
         return {
             "success": True

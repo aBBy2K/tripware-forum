@@ -10,6 +10,7 @@ from models.users import Users
 from models.subscription import Subs
 from repositories.users import UsersRepository
 from config import DB_SECRET_KEY
+from services.sub_buy_service import SubsService
 from templates.template_config import template
 from services.notifications import NotificationsService
 
@@ -76,16 +77,7 @@ async def get_current_user(request: Request, db = Depends(get_db)):
     if user.sub:
         if user.sub.expires_at < datetime.now():
             async with SessionLocal() as db:
-                await db.execute(delete(Subs).where(Subs.id == user.sub.id))
-                await db.commit()
-                await NotificationsService.add_notif(
-                    n_type="notification",
-                    head="Expired subscription",
-                    body="Your subscription has expired",
-                    user_id=user.id,
-                    is_read=False,
-                    db=db
-                )
+                await SubsService.deactivate(user, db)
 
     return user
 

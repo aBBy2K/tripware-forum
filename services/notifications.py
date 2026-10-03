@@ -1,14 +1,16 @@
 import json
-
-from fastapi import HTTPException
+import asyncio
+from fastapi import HTTPException, BackgroundTasks
 from starlette.websockets import WebSocketDisconnect
-
 from core.redis_conf import redis
 from repositories.notifications import NotificationsRepository
 from repositories.users import UsersRepository
 from services.users import UsersService
 from websocket.manager import manager
-from security.email import notification_email
+from security.email import notification_email, _safe_send
+from services.telegram import TelegramService
+
+background_tasks = set()
 
 class NotificationsService:
     @staticmethod
@@ -59,13 +61,15 @@ class NotificationsService:
             })
         )
 
-        await notification_email(user["email"], head, body)
+        if user["do_email_notifications"]:
+            task = asyncio.create_task(_safe_send(user["email"], head, body))
+            background_tasks.add(task)
+            task.add_done_callback(background_tasks.discard)
 
-        # await manager.notify(user_id, {
-        #     "user_id": user_id,
-        #     "head": head,
-        #     "body": body,
-        # })
+        if user["telegram_chat_id"]:
+            task = asyncio.create_task(TelegramService.send_message(f"New notification\n\n{head}\n\n{body}\n\nTRIPWARE", user["telegram_chat_id"]))
+            background_tasks.add(task)
+            task.add_done_callback(background_tasks.discard)
 
         return notification
 

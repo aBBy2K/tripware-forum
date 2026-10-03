@@ -12,6 +12,11 @@ conf = ConnectionConfig(
     USE_CREDENTIALS=True
 )
 
+async def _safe_send(email, head, body):
+    try:
+        await notification_email(email, head, body)
+    except Exception as e:
+        print(f"[MAIL]: Failed to send email: {e}")
 
 async def verification_email(email: str, token: str):
     message = MessageSchema(

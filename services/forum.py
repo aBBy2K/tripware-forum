@@ -12,6 +12,7 @@ from repositories.admin_forum import AdminForumRepository
 from repositories.forum import ForumRepository
 from schemas.posts import PostsUpdate, PostsCreate
 from services.notifications import NotificationsService
+from services.storage import StorageService
 from websocket.manager import manager
 from services.moderation import ModerationService
 from dependencies.dependencies import get_moderation_service
@@ -67,7 +68,7 @@ class ForumService:
 
                 if liked_uids:
                     await redis.sadd(
-                        f"post:{post.id}:likes",
+                        f"post:{post["id"]}:likes",
                         *liked_uids
                     )
 
@@ -278,30 +279,8 @@ class ForumService:
 
 
         if imgs:
-            if aa_imgs + len(imgs) > 5:
-                raise HTTPException(
-                    status_code=403,
-                    detail="you can't choose more than 5 pictures"
-                )
-
-            for img in imgs:
-                if not img or img.size == 0:
-                    print("img size is less than 0")
-                    continue
-
-                if img.content_type not in allowed_content_type:
-                    print("not allowed content type")
-                    continue
-
-                ext = img.filename.split(".")[-1]
-                unique_name = secrets.token_hex(16)
-                fullpath = f"static/uploads/post_imgs/{unique_name}.{ext}"
-
-                content = await img.read()
-
-                await run_in_threadpool(lambda p=fullpath, c=content: open(p, "wb").write(c))
-
-                add_img = await ForumRepository.add_post_img(f"/{fullpath}", post.id, db)
+            paths = await StorageService.save_imgs_post(imgs)
+            add_img = await ForumRepository.add_post_img(paths, post.id, db)
 
         for k, v in data.items():
             setattr(post, k, v)
@@ -343,32 +322,9 @@ class ForumService:
         post = await ForumRepository.create_post(title=title, body=body, subcat_id=subcat_id, current_user=current_user, db=db)
 
         if imgs:
-            print("got images", len(imgs))
+            paths = await StorageService.save_imgs_post(imgs)
 
-            if len(imgs) > 5:
-                raise HTTPException(
-                    status_code=403,
-                    detail="you can't choose more than 5 pictures"
-                )
-
-            for img in imgs:
-                if not img or img.size == 0:
-                    print("img size is less than 0")
-                    continue
-
-                if img.content_type not in allowed_content_type:
-                    print("not allowed content type")
-                    continue
-
-                ext = img.filename.split(".")[-1]
-                unique_name = secrets.token_hex(16)
-                fullpath = f"static/uploads/post_imgs/{unique_name}.{ext}"
-
-                content = await img.read()
-
-                await run_in_threadpool(lambda p=fullpath, c=content: open(p, "wb").write(c))
-
-                add_img = await ForumRepository.add_post_img(f"/{fullpath}", post.id, db)
+            add_img = await ForumRepository.add_post_img(paths, post.id, db)
 
         bgtask.add_task(moderation_bg, post.id, db, moderation_service)
 
@@ -383,22 +339,13 @@ class ForumService:
 
         cached = await redis.get(f"post:{pid}")
 
-        if cached:
+        if not cached:
+            post = await ForumService.get_post(pid, db, current_user)
+        else:
             post = json.loads(cached)
 
-            if not post["allow_comms"] or current_user.role.name != "Admin" and post["subcategory"]["required_role"] != current_user.role.name:
-                raise no_permission_exc
-        else:
-            post = await ForumRepository.get_post_by_id(pid, db)
-
-            if not post:
-                raise HTTPException(
-                    status_code=404,
-                    detail="post not found"
-                )
-
-            if not post.allow_comms or current_user.role.name != "Admin" and post.subcategory.required_role != current_user.role.name:
-                raise no_permission_exc
+        if not post["allow_comms"] or current_user.role.name != "Admin" and post["subcategory"]["required_role"] != current_user.role.name:
+            raise no_permission_exc
 
         msg = await ForumRepository.create_comment(comment, pid, db, current_user)
 
@@ -521,15 +468,16 @@ class ForumService:
         post = await ForumService.get_post(pid, db, current_user)
         imgs = await ForumRepository.get_imgs_by_post(pid, db)
 
-        if current_user.role.name == "Admin" or post["author"]["id"] == current_user.id:
+        if current_user.role.name == "Admin" or post["post"]["author"]["id"] == current_user.id:
             if imgs:
                 await ForumRepository.delete_imgs_from_db(pid, db)
 
-            cached = redis.get(f"post:{pid}")
+            cached = await redis.get(f"post:{pid}")
 
             if cached:
                 await redis.delete(f"post:{pid}")
 
+            await StorageService.delete_post_imgs(imgs, db)
             await ForumRepository.delete_post(pid, db)
 
             if is_reported:

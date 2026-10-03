@@ -39,6 +39,8 @@ class UsersService:
             "is_banned": user_db.is_banned,
             "ban_reason": user_db.ban_reason,
             "is_verified": user_db.is_verified,
+            "do_email_notifications": user_db.do_email_notifications,
+            "telegram_chat_id": user_db.telegram_chat_id,
 
             "role": {
                 "id": user_db.role.id,

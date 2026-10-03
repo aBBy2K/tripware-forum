@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
-from sqlalchemy import Integer, String, Boolean, ForeignKey, Text, DateTime, func
+from sqlalchemy import Integer, String, Boolean, ForeignKey, Text, DateTime, func, BigInteger
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 from database.database import Base
 
@@ -20,7 +20,9 @@ class Users(Base):
     is_banned: Mapped[bool] = mapped_column(Boolean, default=False)
     ban_reason: Mapped[str | None] = mapped_column(String(32), nullable=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
-    verification_token = mapped_column(String(32))
+    verification_token: Mapped[str] = mapped_column(String(32))
+    do_email_notifications: Mapped[bool] = mapped_column(Boolean, default=False)
+    telegram_chat_id: Mapped[int] = mapped_column(BigInteger, nullable=True, default=None)
 
     sub: Mapped["Subs | None"] = relationship(back_populates="user")
     notifications: Mapped[list["Notifications"]] = relationship(back_populates="user")

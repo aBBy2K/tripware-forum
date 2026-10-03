@@ -21,9 +21,9 @@
         </div>
         <nav>
             <a href="/">Index</a>
-            <a href="/buy">Subscription</a>
+            <a href="/buy">Premium</a>
             <a href="/dms">DMs</a>
-            <a href="/profile">Profile</a>
+            <a href="/profile" id="profile">Profile</a>
             <a href="/profile/logout">Log out</a>
             <a href="/profile/notifications" class="notif-bell">
                 Notifications
@@ -42,8 +42,6 @@
     {% endblock %}
 
     <script>
-
-
     const notifSocket = new WebSocket(`ws://${window.location.host}/profile/notifications/ws`);
     const notificationSound = new Audio('/static/assets/notification.mp3');
     let unreadCount = {{ unread_notifications | length }};

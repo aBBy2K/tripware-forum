@@ -1,4 +1,5 @@
 from repositories.subscriptions import SubRepository
+from services.notifications import NotificationsService
 
 class SubsService:
     @staticmethod
@@ -15,3 +16,16 @@ class SubsService:
             "success": True,
             "sub": sub
         }
+
+    @staticmethod
+    async def deactivate(user, db):
+        await SubRepository.delete(user, db)
+
+        await NotificationsService.add_notif(
+            n_type="notification",
+            head="Expired subscription",
+            body="Your subscription has expired",
+            user_id=user.id,
+            is_read=False,
+            db=db
+        )
