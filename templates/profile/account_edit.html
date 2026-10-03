@@ -2,7 +2,21 @@
 {% block content %}
 
 <div class="unauthed-container">
-    <p>Coming soon...</p>
+    <form method="post" class="auth-form">
+        <div style="display: flex; flex-direction: row;">
+            Send email notifications: <input type="checkbox" name="doEmailNotifs" {% if current_user.do_email_notifications %} checked {% endif %} >
+        </div>
+        <input type="submit" value="OK">
+    </form>
+
+    {% if current_user.telegram_chat_id %}
+        <a href="/account/tglink">Unlink my telegram account</a>
+    {% else %}
+        <a href="/account/tglink">Link my telegram account</a>
+    {% endif %}
+    {% if e %}
+        <p>{{ e }}</p>
+    {% endif %}
 </div>
 
 {% endblock %}

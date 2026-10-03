@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
-
-from sqlalchemy import select
+from sqlalchemy import select, delete, update
 from sqlalchemy.orm import selectinload
+from models.users import Users
 
 from models.subscription import Subs, SubPlans
 
@@ -29,3 +29,11 @@ class SubRepository:
         await db.commit()
         await db.refresh(sub)
         return sub
+
+    @classmethod
+    async def delete(cls, user, db):
+        await db.execute(update(Users).where(Users.id == user.id).values(role_id=1))
+        
+        await db.execute(delete(Subs).where(Subs.id == user.sub.id))
+
+        await db.commit()

@@ -14,6 +14,8 @@ class UsersRepository:
         user = Users(login=login, password=bcrypt.hash(password), email=email, name=name, is_verified=False, verification_token=token)
         db.add(user)
         await db.commit()
+        await db.refresh(user)
+        return user
 
     @classmethod
     async def reset_password(cls, password, token, db):
@@ -105,7 +107,19 @@ class UsersRepository:
 
     @classmethod
     async def set_last_seen(cls, dt, uid, db):
-
         stmt = update(Users).where(Users.id == uid).values(last_seen=dt)
         update_st = await db.execute(stmt)
         await db.commit()
+
+    @classmethod
+    async def set_tg_chatid(cls, chat_id, uid,  db):
+        stmt = update(Users).where(Users.id == uid).values(telegram_chat_id=chat_id)
+        await db.execute(stmt)
+        await db.commit()
+        return True
+
+    @classmethod
+    async def get_user_by_chatid(cls, chat_id, db):
+        stmt = select(Users).where(Users.telegram_chat_id == chat_id)
+        result = await db.scalars(stmt)
+        return result.one_or_none()

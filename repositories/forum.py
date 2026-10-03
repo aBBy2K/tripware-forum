@@ -174,12 +174,13 @@ class ForumRepository:
         return delete_com
 
     @classmethod
-    async def add_post_img(cls, path, pid, db):
-        image = PostImages(path=path, post_id=pid)
-        db.add(image)
-        await db.commit()
-        await db.refresh(image)
-        return image
+    async def add_post_img(cls, paths: list, pid, db):
+        for path in paths:
+            image = PostImages(path=f"/{path}", post_id=pid)
+            db.add(image)
+            await db.commit()
+            await db.refresh(image)
+        return True
 
     @classmethod
     async def get_imgs_by_post(cls, pid, db):
@@ -240,3 +241,5 @@ class ForumRepository:
         stmt = select(PostComments.post_id).where(PostComments.id == cid)
         post = await db.scalars(stmt)
         return post.one_or_none()
+
+    

@@ -17,3 +17,5 @@ MAIL_USERNAME = os.getenv("MAIL_USERNAME")
 MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
