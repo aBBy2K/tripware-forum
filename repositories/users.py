@@ -29,6 +29,14 @@ class UsersRepository:
             await db.commit()
 
     @classmethod
+    async def reset_password_notoken(cls, password, uid, db):
+        user = await UsersRepository.get_by_id(db, uid)
+
+        if user:
+            user.password = bcrypt.hash(password)
+            await db.commit()
+
+    @classmethod
     async def get_by_id(cls, db, uid: int):
         stmt = select(Users).where(Users.id == uid).options(selectinload(Users.role), selectinload(Users.sub), selectinload(Users.notifications))
         result = await db.scalars(stmt)

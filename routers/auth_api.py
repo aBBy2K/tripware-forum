@@ -5,6 +5,7 @@ from fastapi.responses import RedirectResponse
 from pydantic import EmailStr
 from starlette.background import BackgroundTasks
 from core.redis.ratelimit import rate_limit
+from core.redis_conf import redis
 
 from database.database import get_db
 from services.auth_service import AuthService
@@ -86,7 +87,6 @@ async def verify(request: Request, token: str, db = Depends(get_db)):
         url="/auth/login"
     )
 
-
 @router.get("/forgor")
 async def forgor_page(request: Request):
     return template.TemplateResponse(
@@ -94,8 +94,15 @@ async def forgor_page(request: Request):
         name="auth/forgor.html"
     )
 
+@router.get("/forgor/email")
+async def forgor_email_page(request: Request, db = Depends(get_db)):
+    return template.TemplateResponse(
+        request=request,
+        name="auth/forgor_email.html"
+    )
+
 @router.post("/forgor")
-async def forgor(request: Request, bgtask: BackgroundTasks, email: EmailStr = Form(), db = Depends(get_db)):
+async def forgor_email(request: Request, bgtask: BackgroundTasks, email: EmailStr = Form(), db = Depends(get_db)):
     result = await AuthService.password_recovery(email, db, bgtask)
 
     return template.TemplateResponse(
@@ -121,7 +128,7 @@ async def forgor_verify(request: Request, token: str, db = Depends(get_db)):
 
 @router.post("/forgor/verify/{token}")
 async def forgor_verify(request: Request, token: str, password: str = Form(), c_password: str = Form(), db = Depends(get_db)):
-    result = await AuthService.reset_password(password, c_password, token, db)
+    result = await AuthService.reset_password(password=password, c_password=c_password, token=token, db=db)
 
     if not result["success"]:
         raise HTTPException(

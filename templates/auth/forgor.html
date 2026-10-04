@@ -2,14 +2,7 @@
 {% block content %}
 
 <div class="unauthed-container">
-    <form class="auth-form" method="post">
-        <label for="email">Email</label>
-        <input type="email" name="email" id="email" placeholder="tripware@example.com">
-        <input type="submit" value="Send mail">
-    </form>
-    {% if e %}
-        <p>{{ e }}</p>
-    {% endif %}
+    <a href="/auth/forgor/email">Send verification link via email</a><br>
 </div>
 
 {% endblock %}

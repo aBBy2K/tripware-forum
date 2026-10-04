@@ -11,7 +11,7 @@ class TelegramService:
             try:
                 response = await client.post(
                     url,
-                    json={"chat_id": chat_id, "text": text}
+                    json={"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
                 )
 
                 response.raise_for_status()
