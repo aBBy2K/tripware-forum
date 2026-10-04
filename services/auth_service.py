@@ -1,3 +1,5 @@
+import random
+
 from fastapi import HTTPException, BackgroundTasks
 from passlib.hash import bcrypt
 from pydantic import EmailStr
@@ -11,6 +13,7 @@ from secrets import token_hex
 
 from security.email import verification_email, password_recovery_email
 from security.auth import create_access_key
+from services.telegram import TelegramService
 
 class AuthService:
     @staticmethod
@@ -131,6 +134,25 @@ class AuthService:
             return resmsg
 
     @staticmethod
+    async def password_recovery_telegram(login: str, db):
+        user = await UsersRepository.get_by_login(db, login)
+        resmsg = {"success": False, "message": "A message with password recovery code will be sent if user with this login exists and if you linked your telegram account"}
+        if not user or not user.telegram_chat_id:
+           return resmsg
+
+        code = f"{random.randint(0, 999999):06d}"
+
+        await redis.set(
+            f"tgrec:{code}",
+            user.id,
+            ex=600
+        )
+
+        await TelegramService.send_message(f"Verification code: <tg-spoiler>{code}</tg-spoiler>", user.telegram_chat_id)
+        return resmsg
+
+
+    @staticmethod
     async def recovery_verify(token, db):
         is_e = await UsersRepository.get_by_token(db, token)
 
@@ -143,7 +165,7 @@ class AuthService:
             return {"success": True}
 
     @staticmethod
-    async def reset_password(password, c_password, token, db):
+    async def reset_password(password, c_password, db, token):
         if password != c_password:
             return {"success": False, "message": "Passwords doesn't match"}
 
