@@ -60,8 +60,7 @@ async def ai_bg(prompt, client_id, recipient_id, current_user, gpt_service: GPTS
         
         print("PUBLISHED", result)
     except Exception as e:
-        print(f"ai_bg failed: {e}")
-    
+        print(f"ai_bg fail: {e}")
 
 class DMsServices:
     @staticmethod
