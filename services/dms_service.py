@@ -48,6 +48,7 @@ async def ai_bg(prompt, client_id, recipient_id, current_user, gpt_service: GPTS
             f"chat:user:{recipient_id}",
             json.dumps({
                 "type": "dm_msg",
+                "client_id": client_id,
                 "msg_type": "user",
                 "sender_id": recipient_id,
                 "recipient_id": current_user.id,
