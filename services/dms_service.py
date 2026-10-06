@@ -5,6 +5,7 @@ from core.redis_conf import redis
 from database.database import get_db, SessionLocal, engine
 from models.messages import Messages
 from repositories.messages import MsgRepository
+from repositories.users import UsersRepository
 from security.auth import get_current_user_ws
 from websocket.manager import manager
 from services.storage import StorageService
@@ -14,20 +15,9 @@ from services.notifications import NotificationsService
 
 async def ai_bg(prompt, client_id, recipient_id, current_user, gpt_service: GPTService):
     try:
-        await redis.publish(
-            f"chat:user:{recipient_id}",
-            json.dumps({
-                "type": "dm_msg",
-                "msg_type": "sys",
-                "sender_id": current_user.id,
-                "recipient_id": recipient_id,
-                "msg": "typing...",
-                "istyping": True,
-                "imgs": None
-            }))
-
         async with SessionLocal() as db:
             history = await MsgRepository.get_messages(current_user, recipient_id, db, 10)
+            ai_profile = await UsersRepository.get_by_id(db, 11)
 
         messages = []
 
@@ -52,6 +42,7 @@ async def ai_bg(prompt, client_id, recipient_id, current_user, gpt_service: GPTS
                 "msg_type": "user",
                 "sender_id": recipient_id,
                 "recipient_id": current_user.id,
+                "sender_pfp": ai_profile.pfp,
                 "msg": response["response"],
                 "istyping": None,
                 "imgs": None
@@ -76,6 +67,9 @@ class DMsServices:
                 recipient_id = data["recipient_id"]
                 msg = data["msg"]
 
+                async with SessionLocal() as db:
+                    recipient = await UsersRepository.get_by_id(db, recipient_id)
+
                 if type == "sys":
                     istyping = data["istyping"]
 
@@ -87,6 +81,7 @@ class DMsServices:
                             "msg_type": "sys",
                             "sender_id": current_user.id,
                             "recipient_id": recipient_id,
+                            "sender_pfp": None,
                             "msg": msg,
                             "istyping": istyping,
                             "imgs": None
@@ -133,6 +128,7 @@ class DMsServices:
                             "msg_type": "user",
                             "sender_id": current_user.id,
                             "recipient_id": recipient_id,
+                            "sender_pfp": current_user.pfp,
                             "msg": msg,
                             "istyping": None,
                             "imgs": imgs_paths
@@ -168,6 +164,7 @@ class DMsServices:
                         "msg_type": "delete",
                         "sender_id": current_user.id,
                         "recipient_id": recipient_id,
+                        "sender_pfp": None,
                         "msg": None,
                         "istyping": None,
                         "imgs": None

@@ -14,14 +14,14 @@
         {% for msg in messages %}
             {% if msg.sender_id == current_user.id %}
                 <div class="my-msgs">
-                    <p id="{{ msg.client_id }}" class='{{ msg.client_id }}'>You: {{ msg.msg }} - <a href="#" onclick="deleteMsg('{{ msg.client_id }}')">Delete</a></p>
+                    <p id="{{ msg.client_id }}" class='{{ msg.client_id }}'><img src="{{ current_user.pfp }}" width="25px" height="25px">{{ current_user.name }}: <span class="message">{{ msg.msg }} - <a href="#" onclick="deleteMsg('{{ msg.client_id }}')">Delete</a></span></p>
                     {% for img in msg.imgs %}
                         <img id="{{ msg.client_id }}" src="{{ img.pic_path }}" class="msg-img {{ msg.client_id }}"> - <a href="#" onclick="deleteMsg('{{ msg.client_id }}')">Delete</a>
                     {% endfor %}
                 </div>
             {% else %}
                 <div class="frg-msgs">
-                    <p id="{{ msg.client_id }}" class='{{ msg.client_id }}'>{{ msg.sender.name }}: {{ msg.msg }}</p>
+                    <p id="{{ msg.client_id }}" class='{{ msg.client_id }}'><img src="{{ msg.sender.pfp }}" width="25px" height="25px">{{ msg.sender.name }}: <span class="message">{{ msg.msg }}</span></p>
                     {% for img in msg.imgs %}
                         <img id="{{ msg.client_id }}" src="{{ img.pic_path }}" class="msg-img {{ msg.client_id }}">
                     {% endfor %}
@@ -60,6 +60,7 @@
 
     const currentUserName = "{{ current_user.name }}";
     const currentUserID = {{ current_user.id }};
+    const currentUserPFP = "{{ current_user.pfp }}";
     const recipientId = {{ recipient.id }};
     const recipientName = "{{ recipient.name }}";
 
@@ -127,10 +128,15 @@
     msgInput.addEventListener('blur', stopTyping);
     window.addEventListener('beforeunload', stopTyping);
 
-    function appendMessage(senderId, cid, className, name, text, imgs = []) {
+    function appendMessage(senderId, cid, className, name, pfp, text, imgs = []) {
         const p = document.createElement("p");
         p.className = `${className} ${cid}`;
         p.id = cid
+
+        const pfp_element = document.createElement("img");
+        pfp_element.src = pfp;
+        pfp_element.style.height = "25px";
+        pfp_element.style.width = "25px";
 
         const span = document.createElement('span');
         span.textContent = `${name}: ${text}`;
@@ -162,14 +168,14 @@
             p.appendChild(img);
         });
 
-        p.append(span, a || '');
+        p.append(pfp_element, span, a || '');
 
         messagesContainer.appendChild(p);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
     function deleteMsg(cid) {
-        socket.send(JSON.stringify({type: "delete", client_id: cid, recipient_id: recipientId, msg: null, imgs: null}));
+        socket.send(JSON.stringify({type: "delete", client_id: cid, recipient_id: recipientId, sender_pfp: null, msg: null, imgs: null}));
 
         const element = document.getElementsByClassName(`${cid}`);
 
@@ -181,7 +187,7 @@
         }
     }
 
-    sendBtn.addEventListener("click", async () => {
+    async function sendMessage() {
         const clientId = crypto.randomUUID();
         const text = msgInput.value.trim();
         const files = Array.from(imgsInput.files);
@@ -192,11 +198,22 @@
         stopTyping();
 
         socket.send(JSON.stringify({type: "user", client_id: clientId, recipient_id: recipientId, msg: text, imgs: imgs }));
-        appendMessage(currentUserID, clientId, "my-msgs", currentUserName, text, imgs);
+        appendMessage(currentUserID, clientId, "my-msgs", currentUserName, currentUserPFP, text, imgs);
 
         msgInput.value = "";
         imgsInput.value = "";
         updateImgsCount();
+    }
+
+    sendBtn.addEventListener("click", async () => {
+        await sendMessage();
+    });
+
+    msgInput.addEventListener("keydown", async(e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            await sendMessage();
+        }
     });
 
     socket.onmessage = function(event) {
@@ -210,7 +227,7 @@
                     typingStatus.innerHTML = "";
                 }
             } else if (data.msg_type === "user") {
-                appendMessage(data.sender_id, data.client_id, "frg-msgs", recipientName, data.msg, data.imgs || []);
+                appendMessage(data.sender_id, data.client_id, "frg-msgs", recipientName, data.sender_pfp, data.msg, data.imgs || []);
             } else if (data.msg_type === "delete") {
                 const element = document.getElementsByClassName(`${data.client_id}`);
                 for (let i = element.length - 1; i >= 0; i--) {

@@ -182,13 +182,14 @@ nav {
 .messages {
     display: flex;
     flex-direction: column;
-    gap: 0;
+    gap: 10px;
 }
 
 .messages p {
     margin-top: 1px;
     margin-bottom: 1px;
 }
+
 
 .recipient {
     display: flex;
@@ -383,6 +384,11 @@ nav {
     max-height: 200px;
     margin-top: 5px;
     border-radius: 6px;
+}
+
+
+.frg-msgs p {
+    align-content: center;
 }
 
 .attach-btn {
