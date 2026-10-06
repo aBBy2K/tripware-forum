@@ -38,6 +38,7 @@ class PubSub:
                             client_id=data["client_id"],
                             sender_id=data["sender_id"],
                             recipient_id=data["recipient_id"],
+                            sender_pfp=data["sender_pfp"],
                             msg=data["msg"],
                             istyping=data["istyping"],
                             imgs=data["imgs"],
