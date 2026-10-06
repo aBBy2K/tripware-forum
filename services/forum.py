@@ -1,3 +1,4 @@
+import asyncio
 import json
 import secrets
 import httpx
@@ -25,13 +26,28 @@ allowed_content_type = [
     "image/avif"
 ]
 
+async def check_with_retry(text: str, moderation_service: ModerationService) -> dict:
+    moderation = await moderation_service.check_content(text)
+
+    for _ in range (3):
+        
+        if not moderation["failure"]:
+            break
+
+        await asyncio.sleep(10)
+        print(f"[GROQ] Failure. Retrying. Attempt: {_}")
+        moderation = await moderation_service.check_content(text)
+
+    return moderation
+        
+
 async def moderation_bg(pid, db, moderation_service: ModerationService):
     post = await AdminForumRepository.get_post_by_id(pid, db)
 
     if not post:
         return
 
-    moderation = await moderation_service.check_content(f"{post.title}: {post.body}")
+    moderation = await check_with_retry(f"{post.title}: {post.body}", moderation_service)
 
     if moderation["failure"]:
         return
