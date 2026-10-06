@@ -14,14 +14,14 @@
         {% for msg in messages %}
             {% if msg.sender_id == current_user.id %}
                 <div class="my-msgs">
-                    <p id="{{ msg.client_id }}" class='{{ msg.client_id }}'><img src="{{ current_user.pfp }}" width="25px" height="25px">{{ current_user.name }}: <span class="message">{{ msg.msg }} - <a href="#" onclick="deleteMsg('{{ msg.client_id }}')">Delete</a></span></p>
+                    <p id="{{ msg.client_id }}" class='{{ msg.client_id }} message'><img src="{{ current_user.pfp }}" width="25px" height="25px">{{ current_user.name }}: <span class="message">{{ msg.msg }} - <a href="#" onclick="deleteMsg('{{ msg.client_id }}')">Delete</a></span></p>
                     {% for img in msg.imgs %}
                         <img id="{{ msg.client_id }}" src="{{ img.pic_path }}" class="msg-img {{ msg.client_id }}"> - <a href="#" onclick="deleteMsg('{{ msg.client_id }}')">Delete</a>
                     {% endfor %}
                 </div>
             {% else %}
                 <div class="frg-msgs">
-                    <p id="{{ msg.client_id }}" class='{{ msg.client_id }}'><img src="{{ msg.sender.pfp }}" width="25px" height="25px">{{ msg.sender.name }}: <span class="message">{{ msg.msg }}</span></p>
+                    <p id="{{ msg.client_id }}" class='{{ msg.client_id }} message'><img src="{{ msg.sender.pfp }}" width="25px" height="25px">{{ msg.sender.name }}: <span class="message">{{ msg.msg }}</span></p>
                     {% for img in msg.imgs %}
                         <img id="{{ msg.client_id }}" src="{{ img.pic_path }}" class="msg-img {{ msg.client_id }}">
                     {% endfor %}
@@ -130,7 +130,7 @@
 
     function appendMessage(senderId, cid, className, name, pfp, text, imgs = []) {
         const p = document.createElement("p");
-        p.className = `${className} ${cid}`;
+        p.className = `${className} ${cid} message`;
         p.id = cid
 
         const pfp_element = document.createElement("img");
