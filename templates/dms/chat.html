@@ -139,6 +139,11 @@
         pfp_element.style.width = "25px";
 
         const span = document.createElement('span');
+
+        if (text === null) {
+            text = "Failed to get response"
+        }
+
         span.textContent = `${name}: ${text}`;
 
         let a;
