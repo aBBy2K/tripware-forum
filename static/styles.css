@@ -190,6 +190,9 @@ nav {
     margin-bottom: 1px;
 }
 
+.message {
+    max-width: 350px;
+}
 
 .recipient {
     display: flex;
