@@ -181,8 +181,14 @@ nav {
 
 .messages {
     display: flex;
-    flex-direction: column;
+    flex-direction: column-reverse;
     gap: 10px;
+    max-height: 500px;
+    overflow-y: scroll;
+
+    &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .messages p {
