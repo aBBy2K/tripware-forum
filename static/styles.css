@@ -181,7 +181,7 @@ nav {
 
 .messages {
     display: flex;
-    flex-direction: column-reverse;
+    flex-direction: column;
     gap: 10px;
     max-height: 500px;
     overflow-y: scroll;
@@ -198,6 +198,7 @@ nav {
 
 .message {
     max-width: 350px;
+    white-space: pre-wrap;
 }
 
 .recipient {
@@ -238,6 +239,13 @@ nav {
     display: flex;
 }
 
+#load-more {
+    padding: 5px;
+    background-color: #323232;
+    color: white;
+    border: 0;
+}
+
 .msg-chatbox-container textarea, input[type="text"] {
     display: flex;
     width: 800px;
@@ -269,6 +277,10 @@ nav {
     border-radius: 5px;
     background: #232323;
     height: fit-content;
+}
+
+#post-body {
+    white-space: pre-wrap;
 }
 
 .post {

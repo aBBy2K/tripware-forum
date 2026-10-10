@@ -4,9 +4,9 @@
 <div class="unauthed-container">
     <form class="auth-form" method="post" enctype="multipart/form-data">
         <label for="post_title">Title</label>
-        <textarea id="post_title" name="post_title" placeholder="{{ post.title }}" style="border: 1px solid #323232; background: #232323; height: 20px; resize: none"></textarea>
+        <textarea id="post_title" name="post_title" value="{{ post.title }}" style="border: 1px solid #323232; background: #232323; height: 20px; resize: none"></textarea>
         <label for="post_body">Body</label>
-        <textarea id="post_body" name="post_body" placeholder="{{ post.body }}" style="border: 1px solid #323232; background: #232323; height: 100px; width: 700px; resize: none"></textarea>
+        <textarea id="post_body" name="post_body" value="{{ post.body }}" style="border: 1px solid #323232; background: #232323; height: 100px; width: 700px; resize: none"></textarea>
         <label for="imgs">Select images</label>
         <input type="file" name="imgs" id="imgs" accept="image/*" multiple>
         <div style="display: flex; flex-direction: row">

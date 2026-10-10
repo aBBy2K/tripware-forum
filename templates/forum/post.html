@@ -28,7 +28,7 @@
                     <a href="/users/{{ post.author_id }}">{{ post.title }}</a>
                 </div>
 
-                {{ post.body }}
+                <p id="post-body">{{ post.body }}</p>
 
                 {% if post.images %}
                     <div class="post-images">
@@ -280,8 +280,6 @@ function addComment(comment) {
         document.getElementById("comments-container");
 
 
-    // Если комментариев раньше не было,
-    // удаляем сообщение "There's no comments yet :("
     const noComments =
         document.getElementById("no-comments");
 
@@ -290,7 +288,6 @@ function addComment(comment) {
     }
 
 
-    // Основной контейнер комментария
     const commentContainer =
         document.createElement("div");
 
@@ -299,21 +296,17 @@ function addComment(comment) {
     commentContainer.id = comment.id;
 
 
-    // post-container
     const postContainer =
         document.createElement("div");
 
     postContainer.className = "post-container";
 
 
-    // post-full
     const postFull =
         document.createElement("div");
 
     postFull.className = "post-full";
 
-
-    // Автор
     const authorContainer =
         document.createElement("div");
 
@@ -345,7 +338,6 @@ function addComment(comment) {
     authorContainer.appendChild(authorLink);
 
 
-    // Текст комментария
     const content =
         document.createElement("div");
 
@@ -355,19 +347,15 @@ function addComment(comment) {
         comment.body;
 
 
-    // Добавляем автора и текст
     postFull.appendChild(authorContainer);
     postFull.appendChild(content);
 
-
-    // post-interaction
     const interaction =
         document.createElement("div");
 
     interaction.className = "post-interaction";
 
 
-    // Like
     const likeLink =
         document.createElement("a");
 
@@ -377,8 +365,6 @@ function addComment(comment) {
     likeLink.textContent =
         "Like";
 
-
-    // Report
     const reportLink =
         document.createElement("a");
 

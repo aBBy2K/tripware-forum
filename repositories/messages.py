@@ -1,4 +1,4 @@
-from sqlalchemy import select, and_, or_, delete
+from sqlalchemy import select, and_, or_, delete, asc, desc
 from sqlalchemy.orm import selectinload
 
 from models.messages import Messages, ImgsInMSGS
@@ -59,12 +59,14 @@ class MsgRepository:
         return result.all()
 
     @classmethod
-    async def get_messages(cls, current_user, user_id, db, limit = None):
+    async def get_messages(cls, current_user, user_id, db, limit = None, offset = None, sort_order = "asc"):
+        order_func = desc if sort_order == "desc" else asc
+
         stmt = select(Messages).where(
             or_(
                 and_(Messages.recipient_id == current_user.id, Messages.sender_id == user_id),
                 and_(Messages.recipient_id == user_id, Messages.sender_id == current_user.id)
             )
-        ).options(selectinload(Messages.sender), selectinload(Messages.imgs)).order_by(Messages.created_at.asc()).limit(limit)
+        ).options(selectinload(Messages.sender), selectinload(Messages.imgs)).order_by(order_func(Messages.created_at)).limit(limit).offset(offset)
         result = await db.scalars(stmt)
         return result.all()
