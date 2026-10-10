@@ -66,6 +66,15 @@
 
     const doneTypingInterval = 1000;
 
+    const totalMsgs = document.querySelectorAll(".message");
+    const lastMsg = totalMsgs[totalMsgs.length - 1];
+
+    if (lastMsg) {
+        lastMsg.scrollIntoView({
+            block: "end"
+        })
+    }
+
     let socket
     let isTyping = false;
     let typingTimer = null;
@@ -179,6 +188,7 @@
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
+
     function deleteMsg(cid) {
         socket.send(JSON.stringify({type: "delete", client_id: cid, recipient_id: recipientId, sender_pfp: null, msg: null, imgs: null}));
 
@@ -215,7 +225,7 @@
     });
 
     msgInput.addEventListener("keydown", async(e) => {
-        if (e.key === "Enter") {
+        if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             await sendMessage();
         }

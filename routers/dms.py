@@ -47,6 +47,12 @@ async def chat_page(request: Request, user_id: int, db = Depends(get_db), curren
         context={"current_user": current_user, "recipient": recipient, "messages": messages}
     )
 
+# @router.get("/{user_id}/load")
+# async def load_more(request: Request, user_id: int, offset: int, db = Depends(get_db), current_user = Depends(get_current_user)):
+#     messages = await MsgRepository.get_messages(current_user, user_id, db, 5, offset, "desc")
+
+#     return {"messages": messages}
+
 @router.websocket("/ws")
 async def ws(ws: WebSocket, current_user = Depends(get_current_user_ws)):
     print(
