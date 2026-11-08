@@ -21,8 +21,11 @@ Python, FastAPI, SQLAlchemy (async), Alembic, MySQL, Redis, Celery, Docker
 
 ## Запуск
 1. `cp .env.example .env`
-2. `docker compose up --build`
-3. Приложение: http://localhost:8000, документация: /docs
+2. `mkdir static/uploads/pfps`
+3. `mkdir static/uploads/post_imgs`
+4. `mkdir static/uploads/msgs_imgs`
+5. `docker compose up --build`
+6. Приложение: http://localhost:8000, документация: /docs
 
 ## Тесты
 `pytest`
