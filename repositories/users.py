@@ -2,20 +2,28 @@ from operator import and_
 from secrets import token_hex
 
 from sqlalchemy import select, delete, func, update
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy.orm import selectinload
-from passlib.hash import bcrypt
+from passlib.hash import bcrypt # type: ignore
+import logging
 
 from models.users import Users, UsersSubscribers
 
+logger = logging.getLogger(__name__)
 
 class UsersRepository:
     @classmethod
     async def create_user(cls, login, password, email, name, token, db):
-        user = Users(login=login, password=bcrypt.hash(password), email=email, name=name, is_verified=False, verification_token=token)
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
-        return user
+        try:
+            user = Users(login=login, password=bcrypt.hash(password), email=email, name=name, is_verified=False, role_id=1, verification_token=token)
+            db.add(user)
+            await db.commit()
+            await db.refresh(user)
+            return user
+        except SQLAlchemyError as e:
+            await db.rollback()
+            logger.exception(f"An exception has occurred while trying to add new user: {e}")
+            raise
 
     @classmethod
     async def reset_password(cls, password, token, db):
@@ -121,10 +129,15 @@ class UsersRepository:
 
     @classmethod
     async def set_tg_chatid(cls, chat_id, uid,  db):
-        stmt = update(Users).where(Users.id == uid).values(telegram_chat_id=chat_id)
-        await db.execute(stmt)
-        await db.commit()
-        return True
+        try:
+            stmt = update(Users).where(Users.id == uid).values(telegram_chat_id=chat_id)
+            await db.execute(stmt)
+            await db.commit()
+            return True
+        except SQLAlchemyError as e:
+            await db.rollback()
+            logging.exception(f"An exception has occurred while trying to update user tg chat_id: {e}")
+            raise
 
     @classmethod
     async def get_user_by_chatid(cls, chat_id, db):

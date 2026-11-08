@@ -1,9 +1,8 @@
-import asyncio
+import logging
 from datetime import datetime, timedelta
 from fastapi import Depends, Request, HTTPException, WebSocket, WebSocketException, status
 from fastapi.responses import RedirectResponse
 from jose import jwt, JWTError
-from sqlalchemy import select, delete
 
 from database.database import get_db, engine, SessionLocal
 from models.users import Users
@@ -12,7 +11,8 @@ from repositories.users import UsersRepository
 from config import DB_SECRET_KEY
 from services.sub_buy_service import SubsService
 from templates.template_config import template
-from services.notifications import NotificationsService
+
+logger = logging.getLogger(__name__)
 
 SECRET_KEY = DB_SECRET_KEY
 ALIVE = 30
@@ -49,7 +49,7 @@ async def _get_user_from_token(token: str | None, db) -> Users | None:
         user = await UsersRepository.get_by_id(db, user_id)
 
         return user
-    except JWTError:
+    except (JWTError, AttributeError):
         return None
 
 #http
@@ -65,9 +65,7 @@ async def get_current_user(request: Request, db = Depends(get_db)):
 
     user = await _get_user_from_token(token, db)
     if not user:
-        return {
-            "success": False
-        }
+        return None
 
     if user and user.is_banned:
         raise HTTPException(

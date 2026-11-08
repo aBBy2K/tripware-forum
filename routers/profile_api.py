@@ -30,7 +30,7 @@ async def profile_page(request: Request, current_user = Depends(get_current_user
 
 @router.get("/notifications")
 async def notifications_page(request: Request, current_user = Depends(get_current_user), db = Depends(get_db)):
-    notifications = await NotificationsRepository.get_all(current_user, db)
+    notifications = await NotificationsRepository.get_all(current_user.id, db)
 
     return template.TemplateResponse(
         request=request,

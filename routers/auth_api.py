@@ -56,8 +56,8 @@ def register_page(request: Request):
     )
 
 @router.post("/register")
-async def register(request: Request, bgtask: BackgroundTasks, login: str = Form(), password: str = Form(), c_password: str = Form(), email: EmailStr = Form(), name: str = Form(), db = Depends(get_db), ):
-    result = await AuthService.register(login=login, password=password, c_password=c_password, email=email, name=name, db=db, bgtask=bgtask)
+async def register(request: Request, login: str = Form(), password: str = Form(), c_password: str = Form(), email: EmailStr = Form(), name: str = Form(), db = Depends(get_db)):
+    result = await AuthService.register(login=login, password=password, c_password=c_password, email=email, name=name, db=db)
 
     if not result["success"]:
         return template.TemplateResponse(

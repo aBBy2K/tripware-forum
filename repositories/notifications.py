@@ -12,8 +12,8 @@ class NotificationsRepository:
         return notif
 
     @classmethod
-    async def get_all(cls, current_user, db):
-        stmt = select(Notifications).where(and_(Notifications.is_read == False, Notifications.user_id == current_user.id)).order_by(Notifications.created_at.desc())
+    async def get_all(cls, uid, db):
+        stmt = select(Notifications).where(and_(Notifications.is_read == False, Notifications.user_id == uid)).order_by(Notifications.created_at.desc())
         notifications = await db.scalars(stmt)
         return notifications.all()
 

@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from fastapi import FastAPI, Depends, WebSocket
 from fastapi.requests import Request
@@ -28,6 +29,11 @@ from routers.admin_api import router as admin
 from routers.forum import router as forum
 from routers.users import router as user
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s] [%(levelname)s] [%(name)s]: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
 
 async def sync_views_loop():
         while True:
@@ -93,7 +99,7 @@ async def index(request: Request, current_user = Depends(get_current_user), db =
     token = request.cookies.get("token")
 
     if token:
-        unread = await NotificationsRepository.get_all(current_user, db)
+        unread = await NotificationsRepository.get_all(current_user.id, db)
         
         template.env.globals["unread_notifications"] = unread
 

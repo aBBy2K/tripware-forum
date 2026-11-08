@@ -10,9 +10,9 @@ if TYPE_CHECKING:
 class Users(Base):
     __tablename__ = "users"
 
-    login: Mapped[str] = mapped_column(String(16))
+    login: Mapped[str] = mapped_column(String(16), unique=True)
     password: Mapped[str] = mapped_column(String(128))
-    email: Mapped[str] = mapped_column(String(32))
+    email: Mapped[str] = mapped_column(String(32), unique=True)
     name: Mapped[str] = mapped_column(String(16))
     pfp: Mapped[str] = mapped_column(String(32), default="/static/uploads/pfps/def.png")
     role_id: Mapped[int] = mapped_column(Integer, ForeignKey("roles.id"), default=1)
@@ -22,7 +22,7 @@ class Users(Base):
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     verification_token: Mapped[str] = mapped_column(String(32))
     do_email_notifications: Mapped[bool] = mapped_column(Boolean, default=False)
-    telegram_chat_id: Mapped[int] = mapped_column(BigInteger, nullable=True, default=None)
+    telegram_chat_id: Mapped[int] = mapped_column(BigInteger, nullable=True, default=None, unique=True)
 
     sub: Mapped["Subs | None"] = relationship(back_populates="user")
     notifications: Mapped[list["Notifications"]] = relationship(back_populates="user")

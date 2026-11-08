@@ -1,9 +1,11 @@
+import logging
 import random
 
 from fastapi import HTTPException, BackgroundTasks
 from passlib.hash import bcrypt
 from pydantic import EmailStr
 from fastapi.responses import RedirectResponse
+from sqlalchemy.exc import SQLAlchemyError
 
 from core.redis_conf import redis
 from models.users import Users
@@ -11,19 +13,22 @@ from repositories.users import UsersRepository
 from schemas.users import UsersCreate, PasswordReset
 from secrets import token_hex
 
-from security.email import verification_email, password_recovery_email
+from core.celery.tasks import send_mail
 from security.auth import create_access_key
 from services.telegram import TelegramService
 
+logger = logging.getLogger(__name__)
+
 class AuthService:
     @staticmethod
-    async def register(login: str, password: str, c_password: str, email: EmailStr, name: str, db, bgtask: BackgroundTasks):
+    async def register(login: str, password: str, c_password: str, email: EmailStr, name: str, db):
         user_e = await UsersRepository.get_by_login(db, login=login)
         if user_e:
             return {
                 "success": False,
                 "message": "Login is already taken"
             }
+        
         email_e = await UsersRepository.get_by_email(db, email=email)
         if email_e:
             return {
@@ -42,16 +47,27 @@ class AuthService:
 
             token = token_hex(16)
 
-            user = await UsersRepository.create_user(login=u.login, password=u.password, email=u.email, name=u.name, token=token, db=db)
-
+            try:
+                user = await UsersRepository.create_user(login=u.login, password=u.password, email=u.email, name=u.name, token=token, db=db)
+            except SQLAlchemyError as e:
+                logger.exception(f"SQL Alchemy error: {e}")
+                raise
 
             await redis.set(
                 f"user:{user.id}:token",
                 token,
                 ex=600
             )
-            
-            bgtask.add_task(verification_email, email, token)
+
+            body = f"""
+            Verify your account: https://tripware.ru/auth/verify/{token}
+            """
+            try:
+                send_mail.delay(subject="tripware / verification email", body=body, email=email)
+            except Exception as e:
+                await db.rollback()
+                logger.exception(e)
+                raise
 
         except ValueError as e:
             return {
@@ -60,10 +76,11 @@ class AuthService:
             }
         except Exception as e:
             await db.rollback()
-            return {
-                "success": False,
-                "message": e
-            }
+            logger.exception(f"An exception has occurred while trying to create new user: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail="Internal server error"
+            )
 
         return {
             "success": True
@@ -129,7 +146,24 @@ class AuthService:
 
             await UsersRepository.set_token(db, token, old_token)
 
-            bgtask.add_task(password_recovery_email, email, token)
+            try:
+                body = f"""
+                SOMEONE REQUESTED PASSWORD RECOVERY ON YOUR EMAIL
+
+                https://tripware.ru/auth/forgor/verify/{token}    
+                
+                IF IT WASN'T YOU, THEN IT MEANS THAT SOMEONE IS TRYING TO HACK YOUR TRIPWARE ACCOUNT. PLEASE CONTACT ADMINISTRATION
+                """
+
+                send_mail.delay(subject="tripware / verification email", body=body, email=email)
+
+            except Exception as e:
+                await db.rollback()
+                logger.exception(f"An exception has occurred while trying to send an email: {e}")
+                raise HTTPException(
+                    status_code=500,
+                    detail="Internal server error"
+                )
 
             return resmsg
 

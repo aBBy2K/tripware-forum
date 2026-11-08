@@ -7,11 +7,12 @@ DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
+DB_EXTERNAL_PORT = os.getenv("DB_EXTERNAL_PORT")
 DB_NAME = os.getenv("DB_NAME")
 DB_SECRET_KEY = os.getenv("DB_SECRET_KEY")
 DB_URL = f"mysql+aiomysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-TEST_DB_URL = os.getenv("TEST_DB_URL")
+TEST_DB_URL = f"mysql+aiomysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_EXTERNAL_PORT}/{DB_NAME}_test"
 
 MAIL_USERNAME = os.getenv("MAIL_USERNAME")
 MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
@@ -19,3 +20,8 @@ MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
+
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD")
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = os.getenv("REDIS_PORT")
+REDIS_URL = f"redis://default:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/0"
