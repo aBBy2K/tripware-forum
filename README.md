@@ -1,6 +1,6 @@
 # Tripware
 Форум на FastAPI с автоматической модерацией постов через LLM.
-Демо: <ссылка>
+Демо: [https://](https://tripware.ru/)
 
 ![скриншот](docs/screenshot.png)
 
