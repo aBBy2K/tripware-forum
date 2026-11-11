@@ -1,5 +1,7 @@
 import httpx
+import logging
 
+logger = logging.getLogger(__name__)
 from config import TG_BOT_TOKEN
 
 class TelegramService:
@@ -18,8 +20,8 @@ class TelegramService:
 
                 return True
 
-            except Exception:
-                print("[TG] An error has occured")
+            except Exception as e:
+                logger.exception(f"An error has occured: {e}")
 
     @staticmethod
     async def get_updates(offset, timeout):
@@ -44,8 +46,8 @@ class TelegramService:
                 if data["ok"]:
                     return data["result"]
 
-            except httpx.HTTPStatusError:
-                print("[TG] HTTP Status Error")
+            except httpx.HTTPStatusError as e:
+                logger.exception(f"[TG] HTTP Status Error: {e}")
 
-            except httpx.RequestError:
-                print("[TG] Request Error")
+            except httpx.RequestError as e:
+                logger.exception(f"[TG] Request Error: {e}")

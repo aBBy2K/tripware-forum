@@ -10,6 +10,10 @@ from PIL import Image
 
 from repositories.forum import ForumRepository
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 class StorageService:
     ALLOWED_EXT = {"png", "jpeg", "jpg", "gif", "webp"}
 
@@ -87,7 +91,6 @@ class StorageService:
 
         for img in imgs:
             if not img or img.size == 0:
-                print("img size is less than 0")
                 continue
             
             content = await img.read()
@@ -117,9 +120,9 @@ class StorageService:
             try:
                 await aiofiles.os.remove(path)
             except FileNotFoundError:
-                print(f"{path}: NOT FOUND")
+                logger.exception(f"{path}: NOT FOUND")
             except PermissionError:
-                print(f"{path}: NO PERMISSION")
+                logger.exception(f"{path}: NO PERMISSION")
         
 
 

@@ -1,7 +1,10 @@
 import json
+import logging
 
 from core.redis_conf import redis
 from websocket.manager import manager
+
+logger = logging.getLogger(__name__)
 
 
 class PubSub:
@@ -20,8 +23,6 @@ class PubSub:
             "notification:user:*",
             "post:*"
         )
-
-        print("PUBSUB SUBSCRIBED")
 
         try:
             async for msg in self.pubsub.listen():
@@ -68,9 +69,9 @@ class PubSub:
                         )
 
                 except Exception as e:
-                    print("PUBSUB EVENT ERROR:", repr(e))
+                    logger.exception(f"PUBSUB EVENT ERROR: {repr(e)}")
 
         finally:
             if self.pubsub:
                 await self.pubsub.close()
-                print("PUBSUB CLOSED")
+                logger.info("PUBSUB CLOSED")

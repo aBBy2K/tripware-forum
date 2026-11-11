@@ -9,6 +9,9 @@ from services.users import UsersService
 from websocket.manager import manager
 from security.email import notification_email, _safe_send
 from services.telegram import TelegramService
+import logging
+
+logger = logging.getLogger(__name__)
 
 background_tasks = set()
 
@@ -26,10 +29,7 @@ class NotificationsService:
                     break
 
         except Exception as e:
-            print(
-                f"NOTIFICATION WS ERROR: "
-                f"{type(e).__name__}: {e}"
-            )
+            logger.exception(f"An error has occurred while trying to send notification: {type(e).__name__}: {e}")
 
         finally:
             await manager.disconnect(

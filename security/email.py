@@ -1,5 +1,8 @@
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from config import MAIL_USERNAME, MAIL_PASSWORD
+import logging
+
+logger = logging.getLogger(__name__)
 
 conf = ConnectionConfig(
     MAIL_USERNAME=MAIL_USERNAME,
@@ -16,7 +19,7 @@ async def _safe_send(email, head, body):
     try:
         await notification_email(email, head, body)
     except Exception as e:
-        print(f"[MAIL]: Failed to send email: {e}")
+        logger.exception(f"[MAIL]: Failed to send email: {e}")
 
 async def send_email(subject: str, body: str, email: str):
     message = MessageSchema(

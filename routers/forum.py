@@ -265,9 +265,6 @@ async def edit_post_page(request: Request, post_id: int, db = Depends(get_db), c
 
 @router.post("/post/{post_id}/edit")
 async def edit_post(request: Request, bgtask: BackgroundTasks , post_id: int, post_title: str | None = Form(None), post_body: str | None = Form(None), imgs: Annotated[list[UploadFile], File()] = [], allow_comms: bool = Form(False) , db = Depends(get_db), current_user = Depends(get_current_user), moderation_service: ModerationService = Depends(get_moderation_service)):
-    print(f"allow_comms: {allow_comms}")
-    print(f"type: ", type(allow_comms))
-
     post = await ForumRepository.get_post_by_id(post_id, db)
 
     if current_user.role.name != "Admin" and current_user.id != post.author_id:

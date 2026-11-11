@@ -4,6 +4,9 @@ from sqlalchemy.orm import selectinload
 from models.messages import Messages, ImgsInMSGS
 from models.users import Users
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 class MsgRepository:
     @classmethod
@@ -15,7 +18,7 @@ class MsgRepository:
             await db.refresh(message)
             return message
         except Exception as e:
-            print(f"internal error has occurred while trying to send message to db: {e}")
+            logger.exception(f"internal error has occurred while trying to send message to db: {e}")
             await db.rollback()
 
     @classmethod

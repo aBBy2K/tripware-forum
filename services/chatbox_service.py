@@ -18,10 +18,8 @@ class CBService:
                 data = await websocket.receive_json()
 
                 msg = data["msg"]
-                print("POOL: ", engine.pool.status())
                 async with SessionLocal() as db:
                     message = await CBMSGSRepository.create(current_user_id, msg, db)
-                print("POOL: ", engine.pool.status())
                 if message is None:
                     continue
 

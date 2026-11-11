@@ -1,5 +1,6 @@
 import asyncio
 import os
+import logging
 from typing import Annotated
 from fastapi import Depends, APIRouter, Form, HTTPException, UploadFile, File
 from fastapi.requests import Request
@@ -17,6 +18,8 @@ from services.admin_forum import AdminForumService
 from services.auth_service import AuthService
 from services.profile_service import ProfileService
 from templates.template_config import template
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin", tags=["Admin panel"])
 
@@ -108,32 +111,9 @@ async def delete_report(request: Request, rid: int, db = Depends(get_db), curren
 @router.get("/flushredis")
 async def flush_redis_cache(request: Request, current_user = Depends(get_current_user), admin = Depends(require_admin)):
     await redis.flushdb()
-    print("cache is flushed")
+    logger.info("cache is flushed")
     return {"success": True, "message": "flushed"}
 
-
-@router.get("/pool")
-async def pool():
-    print(
-        f"POOL REQUEST | PID={os.getpid()} | "
-        f"{engine.pool.status()}",
-        flush=True
-    )
-
-    return {
-        "pid": os.getpid(),
-        "pool": engine.pool.status()
-    }
-
-@router.get("/pool_test")
-async def pool():
-    print("BEFORE:", engine.pool.status())
-
-    await asyncio.sleep(5)
-
-    print("AFTER:", engine.pool.status())
-
-    return {"ok": True}
 
 @router.get("/groq-models")
 async def groq(current_user = Depends(get_current_user), admin = Depends(require_admin)):
@@ -144,5 +124,4 @@ async def groq(current_user = Depends(get_current_user), admin = Depends(require
         "https://api.groq.com/openai/v1/models",
         headers={"Authorization": f"Bearer {os.environ['GROQ_API_KEY']}"}
     )
-    print(response.status_code)
-    print(response.json())
+    return response.json()

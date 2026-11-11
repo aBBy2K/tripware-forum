@@ -80,21 +80,10 @@ async def get_current_user(request: Request, db = Depends(get_db)):
     return user
 
 async def get_current_user_ws(websocket: WebSocket):
-    print(
-        "WS AUTH START",
-        websocket.client
-    )
-
     token = websocket.cookies.get("token")
 
     async with SessionLocal() as db:
         user = await _get_user_from_token(token, db)
-
-    print(
-        "WS AUTH END",
-        websocket.client,
-        engine.pool.status()
-    )
 
     if not user:
         raise WebSocketException(

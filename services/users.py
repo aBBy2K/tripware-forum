@@ -15,14 +15,12 @@ class UsersService:
     async def get_user(uid, db):
         cached = await redis.get(f"user:{uid}")
         if cached:
-            print("[+] found user in cache")
             user = json.loads(cached)
 
             user["last_seen"] = datetime.fromisoformat(user["last_seen"])
 
             return user
-
-        print("[-] not found user in cache. caching...")
+        
         user_db = await UsersRepository.get_by_id(db, uid)
 
         if not user_db:
@@ -54,8 +52,6 @@ class UsersService:
             ex=300
         )
 
-        print("[+] user cached")
-
         user["last_seen"] = datetime.fromisoformat(user["last_seen"])
 
         return user
@@ -66,22 +62,15 @@ class UsersService:
 
     @staticmethod
     async def set_online(dt, uid, db: AsyncSession):
-        print(f"[*] updating last seen status for uid: {uid}: {dt}")
         await UsersRepository.set_last_seen(dt, uid, db)
 
     @staticmethod
     async def sub_unsub(follower, followee, db):
-        # if followee.id == current_user.id:
-        #     raise HTTPException(
-        #         status_code=409,
-        #         detail="you can't sub on yourself"
-        #     )
-
         is_sub = await UsersRepository.get_follow(follower, followee, db)
 
         if is_sub:
-            unsub = await UsersRepository.unsubscribe(follower, followee, db)
+            await UsersRepository.unsubscribe(follower, followee, db)
         else:
-            sub = await UsersRepository.subscribe(follower, followee, db)
+            await UsersRepository.subscribe(follower, followee, db)
 
         return {"success": True}

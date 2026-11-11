@@ -12,6 +12,9 @@ from services.storage import StorageService
 from dependencies.dependencies import get_gpt_service
 from services.gpt import GPTService
 from services.notifications import NotificationsService
+import logging
+
+logger = logging.getLogger(__name__)
 
 async def ai_bg(prompt, client_id, recipient_id, current_user, gpt_service: GPTService):
     try:
@@ -28,7 +31,7 @@ async def ai_bg(prompt, client_id, recipient_id, current_user, gpt_service: GPTS
         response = await gpt_service.generate_text_response(prompt, messages)
 
         if response["failure"]:
-            print("AI FAILED")
+            logger.exception("AI FAILED")
 
         async with SessionLocal() as db:
             await MsgRepository.create(11, client_id, current_user.id, response["response"], db)
@@ -47,11 +50,9 @@ async def ai_bg(prompt, client_id, recipient_id, current_user, gpt_service: GPTS
                 "istyping": None,
                 "imgs": None
             })
-        )
-        
-        print("PUBLISHED", result)
+        ) 
     except Exception as e:
-        print(f"ai_bg fail: {e}")
+        logger.exception(f"ai_bg fail: {e}")
 
 class DMsServices:
     @staticmethod
@@ -143,13 +144,6 @@ class DMsServices:
                             user_id=recipient_id,
                             db=db
                         )
-
-                    print("PUBLISHED", result)
-                    # await manager.send_dm(
-                    #     current_user.id,
-                    #     recipient_id,
-                    #     msg
-                    # )
                 elif type == "delete":
                     client_id = data["client_id"]
 
@@ -175,15 +169,10 @@ class DMsServices:
         except WebSocketDisconnect:
             pass
         except Exception as e:
-            print(f"DB ERROR: {type(e).__name__}: {e}")
+            logger.exception(f"DB ERROR: {type(e).__name__}: {e}")
             import traceback
             traceback.print_exc()
         finally:
-            print(
-                "WS CLOSED:",
-                current_user.id,
-                engine.pool.status()
-            )
             await manager.dm_disconnect(current_user.id, websocket)
 
     @staticmethod
@@ -214,14 +203,9 @@ class DMsServices:
         except WebSocketDisconnect:
             pass
         except Exception as e:
-            print(f"DB ERROR: {type(e).__name__}: {e}")
+            logger.exception(f"DB ERROR: {type(e).__name__}: {e}")
             import traceback
             traceback.print_exc()
         finally:
-            print(
-                "WS CLOSED:",
-                current_user.id,
-                engine.pool.status()
-            )
             await manager.dm_disconnect(current_user.id, websocket)
 

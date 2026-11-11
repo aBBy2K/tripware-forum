@@ -17,6 +17,9 @@ from services.storage import StorageService
 from websocket.manager import manager
 from services.moderation import ModerationService
 from dependencies.dependencies import get_moderation_service
+import logging
+
+logger = logging.getLogger(__name__)
 
 allowed_content_type = [
     "image/jpeg",
@@ -35,7 +38,7 @@ async def check_with_retry(text: str, moderation_service: ModerationService) -> 
             break
 
         await asyncio.sleep(10)
-        print(f"[GROQ] Failure. Retrying. Attempt: {_}")
+        logger.warning(f"[GROQ] Failure. Retrying. Attempt: {_}")
         moderation = await moderation_service.check_content(text)
 
     return moderation
@@ -106,10 +109,8 @@ class ForumService:
                 for uid in await redis.smembers(f"post:{pid}:likes")
             }
 
-            print("[+] found in cache")
             return {"post": post, "allow_comments": allow_comments, "likes_uids": likes_uids}
         else:
-            print("[-] not found in cache")
             post = await AdminForumRepository.get_post_by_id(pid, db)
 
             if not await redis.exists(f"post:{post.id}:likes:initialized"):
@@ -189,15 +190,11 @@ class ForumService:
                 ex=300
             )
 
-            print("[+] cached")
-
             allow_comments = post.allow_comms
             likes_uids = {
                 int(uid)
                 for uid in await redis.smembers(f"post:{pid}:likes")
             }
-
-            print("comments:", post.allow_comms)
 
             return {"post": post_cache, "allow_comments": allow_comments, "likes_uids": likes_uids}
 
@@ -207,11 +204,9 @@ class ForumService:
         cached = await redis.get(f"post:{pid}:comments:{page}")
 
         if cached:
-            print("[+] comments found in cache")
             comments = json.loads(cached)
             return comments
 
-        print("[-] comments not found in cache. caching...")
         comments_db = await ForumRepository.get_post_comments_pagination(pid, db, offset)
 
         comments = [
@@ -241,8 +236,6 @@ class ForumService:
             json.dumps(comments),
             ex=300
         )
-
-        print("[+] cached")
         return comments
 
     @staticmethod
@@ -256,7 +249,6 @@ class ForumService:
             return {int(x) for x in liked_ids}
 
         if not await redis.exists(initialized_key):
-            print("[-] not found likes comments in cache. caching...")
 
             liked_ids = await ForumRepository.get_liked_cmnts_ids(
                 pid,
@@ -268,8 +260,6 @@ class ForumService:
                 await redis.sadd(key, *liked_ids)
 
             await redis.set(initialized_key, "1")
-
-            print("[+] cached")
 
         return {int(x) for x in await redis.smembers(key)}
 

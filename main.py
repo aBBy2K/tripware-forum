@@ -37,21 +37,15 @@ logging.basicConfig(
 
 async def sync_views_loop():
         while True:
-            print("POOL: ", engine.pool.status())
             async with SessionLocal() as db:
                 await ForumService.sync_views(db)
-                print("views synced with db")
-            print("POOL: ", engine.pool.status())
             await asyncio.sleep(60)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 
-    print("LIFESPAN START")
-
     await redis.ping()
-    print("Redis connected")
 
     pubsub = PubSub()
 
@@ -67,7 +61,6 @@ async def lifespan(app: FastAPI):
         yield
 
     finally:
-        print("LIFESPAN SHUTDOWN")
 
         sync_task.cancel()
         listener_task.cancel()
@@ -79,8 +72,6 @@ async def lifespan(app: FastAPI):
         )
 
         await redis.close()
-
-        print("LIFESPAN FINISHED")
 
 app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")

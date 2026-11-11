@@ -2,6 +2,9 @@ from json import JSONDecodeError, loads
 import json
 from httpx import HTTPError
 import httpx
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ModerationService:
     def __init__(self, api_key: str):
@@ -36,8 +39,6 @@ class ModerationService:
             }],
         })
 
-        print("BODY:", response.text)
-
         try:
             data = response.json()
             raw = data["choices"][0]["message"]["content"]
@@ -47,7 +48,7 @@ class ModerationService:
                 "verdict": json.loads(raw)
             }
         except (KeyError, JSONDecodeError, HTTPError):
-            print("[GROQ] Unable to do AI user post check")
+            logger.exception("Unable to do AI user post check")
             return {"failure": True}
 
     async def get_summary(self, text: str) -> dict:
@@ -89,5 +90,5 @@ class ModerationService:
                 "summary": json.loads(raw)
                 }
         except (KeyError, JSONDecodeError, HTTPError):
-            print("[GROQ] Unable to get post summary")
+            logger.exception("[GROQ] Unable to get post summary")
             return {"failure": True}
