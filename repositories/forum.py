@@ -17,11 +17,11 @@ class ForumRepository:
         order_func = desc if sort_order == "desc" else asc
         column = SORTABLE.get(sort_by, Posts.created_at)
 
-        stmt1 = select(Posts).where(text("MATCH(title, body) AGAINST(:q IN NATURAL LANGUAGE MODE)")).params(q=query)
+        stmt1 = select(Posts).where(text("MATCH(title, body) AGAINST(:q IN NATURAL LANGUAGE MODE)"), Posts.visibility_option == 1).params(q=query)
         stmt2 = select(Posts).where(or_(
             Posts.title.like(f'%{query}%'),
             Posts.body.like(f'%{query}%')
-        ))
+        ), Posts.visibility_option == 1)
 
         union_sq = union(stmt1, stmt2).subquery()
 
